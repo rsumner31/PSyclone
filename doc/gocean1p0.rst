@@ -663,19 +663,19 @@ In this section we describe the transformations that are specific to
 the GOcean 1.0 API. For an overview of transformations in general see
 :ref:`transformations`.
 
-.. autoclass:: psyclone.transformations.GOceanLoopFuseTrans
+.. autoclass:: transformations.GOceanLoopFuseTrans
    :members:
    :noindex:
 
-.. autoclass:: psyclone.transformations.GOceanOMPParallelLoopTrans
+.. autoclass:: transformations.GOceanOMPParallelLoopTrans
    :members:
    :noindex:
 
-.. autoclass:: psyclone.transformations.GOceanOMPLoopTrans
+.. autoclass:: transformations.GOceanOMPLoopTrans
    :members:
    :noindex:
 
-.. autoclass:: psyclone.transformations.GOConstLoopBoundsTrans
+.. autoclass:: transformations.GOConstLoopBoundsTrans
    :members:
    :noindex:
 

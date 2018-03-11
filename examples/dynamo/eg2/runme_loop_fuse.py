@@ -6,8 +6,8 @@
 #-------------------------------------------------------------------------------
 # Author R. Ford STFC Daresbury Lab
 
-from psyclone.parse import parse
-from psyclone.psyGen import PSyFactory
+from parse import parse
+from psyGen import PSyFactory
 api="dynamo0.1"
 ast,invokeInfo=parse("dynamo_algorithm_mod.F90",api=api)
 psy=PSyFactory(api).create(invokeInfo)
@@ -18,7 +18,7 @@ print psy.invokes.names
 schedule=psy.invokes.get('invoke_0').schedule
 schedule.view()
 
-from psyclone.psyGen import TransInfo
+from psyGen import TransInfo
 t=TransInfo()
 print t.list
 

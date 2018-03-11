@@ -2,9 +2,7 @@
 api to apply loop fusion and then OpenMP parallelisation to an invoke
 with two Kernels. This can be applied via the -s option in the
 generator.py script.'''
-from psyclone.transformations import DynamoOMPParallelLoopTrans, \
-    DynamoLoopFuseTrans
-
+from transformations import DynamoOMPParallelLoopTrans, DynamoLoopFuseTrans
 
 def trans(psy):
     ''' PSyclone transformation script for the dynamo0p3 api to apply
@@ -24,6 +22,5 @@ def trans(psy):
 
     # take a look at what we've done
     schedule.view()
-    schedule.dag(file_format="png")
 
     return psy

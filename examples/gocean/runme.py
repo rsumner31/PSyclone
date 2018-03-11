@@ -32,8 +32,8 @@ Schedules:
 
 '''
 
-from psyclone.parse import parse
-from psyclone.psyGen import PSyFactory
+from parse import parse
+from psyGen import PSyFactory
 
 API = "gocean1.0"
 _, INVOKEINFO = parse("shallow_alg.f90", api=API)

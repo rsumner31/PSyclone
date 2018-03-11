@@ -36,27 +36,27 @@ generator.py
     > python generator.py -d ../kernel -s opt.py algspec.f90
     > python generator.py -s ../scripts/opt.py -l algspec.f90
 
-.. automodule:: psyclone.generator
+.. automodule:: generator
 
 .. autofunction:: generate
 
 The parse module
 ----------------
 
-.. automodule:: psyclone.parse
+.. automodule:: parse
  
 .. autofunction:: parse
 
 The transformations module
 --------------------------
 
-.. automodule:: psyclone.transformations
+.. automodule:: transformations
     :members:
 
 The psyGen module
 -----------------
 
-.. automodule:: psyclone.psyGen
+.. automodule:: psyGen
 
 .. autoclass:: PSy
     :members:
@@ -64,7 +64,7 @@ The psyGen module
 The algGen module
 -----------------
 
-.. automodule:: psyclone.algGen
+.. automodule:: algGen
 
 .. autoclass:: Alg
     :members:
@@ -72,7 +72,7 @@ The algGen module
 The line_length module
 ----------------------
 
-.. automodule:: psyclone.line_length
+.. automodule:: line_length
 
 .. autoclass:: FortLineLength
     :members:

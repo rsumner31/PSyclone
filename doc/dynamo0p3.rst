@@ -1,4 +1,3 @@
-.. Modified I. Kavcic Met Office
 .. _dynamo0.3-api:
 
 dynamo0.3 API
@@ -356,7 +355,7 @@ Metadata
 ++++++++
 
 The code below outlines the elements of the dynamo0.3 API kernel
-metadata, 1) 'meta_args', 2) 'meta_funcs', 3) 'gh_shape', 4)
+metadata, 1) 'meta_args', 2) 'meta_funcs', 3) 'evaluator_shape', 4)
 'iterates_over' and 5) 'procedure'.
 
 ::
@@ -364,7 +363,7 @@ metadata, 1) 'meta_args', 2) 'meta_funcs', 3) 'gh_shape', 4)
   type, public, extends(kernel_type) :: my_kernel_type
     type(arg_type) :: meta_args(...) = (/ ... /)
     type(func_type) :: meta_funcs(...) = (/ ... /)
-    integer :: gh_shape = gh_quadrature_XYoZ
+    integer :: evaluator_shape = quadrature_XYoZ
     integer :: iterates_over = cells
   contains
     procedure :: my_kernel_code
@@ -489,19 +488,8 @@ operator to a field might look like:
        arg_type(GH_COLUMNWISE_OPERATOR, GH_READ, W1, W2H) &
        /)
 
-In some cases a Kernel may be written so that it works for fields and/or
-operators from any type of w2 space i.e. one of ``w2``, ``w2h`` or
-``w2v``. In this case the metadata should be specified as being
-``any_w2``.
-
-.. Warning:: in the current implementation it is assumed that all
-             fields and/or operators specifying ``any_w2`` within a
-             kernel will use the **same** function space. It is up to
-             the user to ensure this is the case as otherwise invalid
-             code would be generated.
-
 It may be that a Kernel is written such that a field and/or operators
-may be on/map-between any function space(s). In this case the metadata
+may be on/map-between any function space. In this case the metadata
 should be specified as being one of ``any_space_1``, ``any_space_2``,
 ..., ``any_space_9``. The reason for having different names is that a
 Kernel might be written to allow 2 or more arguments to be able to
@@ -681,28 +669,25 @@ Column-wise operators are constructed from cell-wise (local) operators.
 Therefore, in order to **assemble** a CMA operator, a kernel must have at
 least one read-only LMA operator, e.g.:
 ::
-   
-   type(arg_type) :: meta_args(2) = (/                                       &
-        arg_type(GH_OPERATOR,            GH_READ,  ANY_SPACE_1, ANY_SPACE_2),&
-        arg_type(GH_COLUMNWISE_OPERATOR, GH_WRITE, ANY_SPACE_1, ANY_SPACE_2) &
-        /)
+  type(arg_type) :: meta_args(2) = (/                                       &
+       arg_type(GH_OPERATOR,            GH_READ,  ANY_SPACE_1, ANY_SPACE_2),&
+       arg_type(GH_COLUMNWISE_OPERATOR, GH_WRITE, ANY_SPACE_1, ANY_SPACE_2) &
+       /)
 
 CMA operators (and their inverse) are **applied** to fields. Therefore any
 kernel of this type must have one read-only CMA operator, one read-only
 field and a field that is updated, e.g.:
 ::
-   
-   type(arg_type) :: meta_args(3) = (/                                      &
-        arg_type(GH_FIELD,    GH_INC,  ANY_SPACE_1),                        &
-        arg_type(GH_FIELD,    GH_READ, ANY_SPACE_2),                        &
-        arg_type(GH_COLUMNWISE_OPERATOR, GH_READ, ANY_SPACE_1, ANY_SPACE_2) &
-        /)
+  type(arg_type) :: meta_args(3) = (/                                      &
+       arg_type(GH_FIELD,    GH_INC,  ANY_SPACE_1),                        &
+       arg_type(GH_FIELD,    GH_READ, ANY_SPACE_2),                        &
+       arg_type(GH_COLUMNWISE_OPERATOR, GH_READ, ANY_SPACE_1, ANY_SPACE_2) &
+       /)
 
 **Matrix-matrix** kernels compute the product/linear combination of CMA
 operators. They must therefore have one such operator that is updated while
 the rest are read-only. They may also have read-only scalar arguments, e.g.:
 ::
-   
    type(arg_type) :: meta_args(3) = (/                                        &
         arg_type(GH_COLUMNWISE_OPERATOR, GH_WRITE, ANY_SPACE_1, ANY_SPACE_2), &
         arg_type(GH_COLUMNWISE_OPERATOR, GH_READ, ANY_SPACE_1, ANY_SPACE_2),  &
@@ -732,7 +717,7 @@ following kernel meta-data:
           (/ func_type(w0, gh_basis, gh_diff_basis) &
              func_type(w1, gh_basis)                &
           /)
-      integer, parameter :: gh_shape = gh_quadrature_XYoZ
+      integer, parameter :: evaluator_shape = quadrature_XYoZ
       integer, parameter :: iterates_over = cells
     contains
       procedure() :: code => testkern_operator_code
@@ -748,18 +733,18 @@ spaces associated with the arguments listed in ``meta_args``.  In this
 case we require both for the W0 function space but only basis
 functions for W1.
 
-gh_shape
-########
+evaluator_shape
+###############
 
 If a kernel requires basis or differential-basis functions then the
 meta-data must also specify the set of points on which these functions
-are required. This information is provided by the ``gh_shape``
+are required. This information is provided by the ``evaluator_shape``
 component of the meta-data.  Currently PSyclone supports two shapes;
-``gh_quadrature_XYoZ`` for Gaussian quadrature points and
-``gh_evaluator`` for evaluation at nodal points.
+``quadrature_XYoZ`` for Gaussian quadrature points and
+``evaluator_XYZ`` for evaluation at nodal points.
 
-Note that it is an error for kernel meta-data to specify a value for
-``gh_shape`` if no basis or differential-basis functions are
+Note that it is an error for kernel meta-data to specify an
+``evaluator_shape`` if no basis or differential-basis functions are
 required.
 
 iterates over
@@ -812,7 +797,7 @@ conventions, are:
        field array name is currently specified as being
        ``"field_"<argument_position>"_"<field_function_space>``. A field
        array is a real array of type ``r_def`` and dimensioned as the
-       unique degrees of freedom for the space that the field is on.
+       unique degrees of freedom for the space that the field operates on.
        This value is passed in separately. Again, the intent is determined
        from the metadata (see :ref:`dynamo0.3-api-meta-args`).
 
@@ -822,14 +807,9 @@ conventions, are:
     3) if the current entry is a field vector then for each dimension of the vector, include a field array. The field array name is specified as being using ``"field_"<argument_position>"_"<field_function_space>"_v"<vector_position>``. A field array in a field vector is declared in the same way as a field array (described in the previous step).
     4) if the current entry is an operator then first include a dimension size. This is an integer. The name of this size is ``<operator_name>"_ncell_3d"``. Next include the operator. This is a real array of type ``r_def`` and is 3 dimensional. The first two dimensions are the local degrees of freedom for the ``to`` and ``from`` function spaces respectively. The third dimension is the dimension size mentioned before. The name of the operator is ``"op_"<argument_position>``. Again the intent is determined from the metadata (see :ref:`dynamo0.3-api-meta-args`).
 
-4) For each function space in the order they appear in the metadata arguments
-   (the ``to`` function space of an operator is considered to be before the
-   ``from`` function space of the same operator as it appears first in
-   lexicographic order)
+4) For each function space in the order they appear in the metadata arguments (the ``to`` function space of an operator is considered to be before the ``from`` function space of the same operator as it appears first in lexicographic order)
 
-    1) Include the number of local degrees of freedom (i.e. number per-cell)
-       for the function space. This is an integer and has intent ``in``. The
-       name of this argument is ``"ndf_"<field_function_space>``.
+    1) Include the number of local degrees of freedom for the function space. This is an integer and has intent ``in``. The name of this argument is ``"ndf_"<field_function_space>``.
     2) If there is a field on this space
 
         1) Include the unique number of degrees of freedom for the function space. This is an integer and has intent ``in``. The name of this argument is ``"undf_"<field_function_space>``.
@@ -837,13 +817,13 @@ conventions, are:
 
     3) For each operation on the function space (``basis``, ``diff_basis``, ``orientation``) in the order specified in the metadata
 
-        1) If it is a basis or differential basis function, include the associated argument. This is a real array of kind ``r_def`` with intent ``in``. The rank and extents of this array depend upon the ``gh_shape``:
+        1) If it is a basis or differential basis function, include the associated argument. This is a real array of kind ``r_def`` with intent ``in``. The rank and extents of this array depend upon the ``evaluator_shape``:
 
-	    1) If ``gh_shape`` is ``gh_evaluator`` then basis and diff basis are ``real`` arrays of rank 3 with extent (``dimension``, ``number_of_dofs``, ``np_xyz``)
+            1) If ``evaluator_shape`` is of type ``_XYZ`` then basis and diff basis are ``real`` arrays of rank 3 with extent (``dimension``, ``number_of_dofs``, ``n_xyz``)
+            2) If ``evaluator_shape`` is of type ``_XYoZ`` then basis and diff basis are ``real`` arrays of rank 4 with extent (``dimension``, ``number_of_dofs``, ``n_xy``, ``n_z``)
+            3) If ``evaluator_shape`` is of type ``_XoYoZ`` then basis and diff basis are ``real`` arrays of rank 5 with extent (``dimension``, ``number_of_dofs``, ``n_x``, ``n_y``, ``n_z``)
 
-            2) If ``gh_shape`` is ``gh_quadrature_xyoz`` then basis and diff basis are ``real`` arrays of rank 4 with extent (``dimension``, ``number_of_dofs``, ``np_xy``, ``np_z``)
-
-           where ``dimension`` is 1 or 3 and depends upon the function space and whether or not it is a basis or a differential basis function. For the former it is (w0=1, w1=3, w2=3, w3=1, wtheta=1, w2h=3, w2v=3, any_w2=3). For the latter it is (w0=3, w1=3, w2=1, w3=3, wtheta=3, w2h=1, w2v=1, any_w2=3). ``number_of_dofs`` is the number of degrees of freedom (dofs) associated with the function space and ``np_*`` are the number of points to be evaluated: i) ``*_xyz`` in all directions (3D); ii) ``*_xy`` in the horizontal plane (2D); iii) ``*_x, *_y`` in the horizontal (1D); and iv) ``*_z`` in the vertical (1D). The name of the argument is ``"basis_"<field_function_space>`` or ``"diff_basis_"<field_function_space>``, as appropriate.
+           where ``dimension`` is 1 or 3 and depends upon the function space and whether or not it is a basis or a differential basis function. For the former it is (w0=1, w1=3, w2=3, w3=1, wtheta=1, w2h=3, w2v=3). For the latter it is (w0=3, w1=3, w2=1, w3=3, wtheta=3, w2h=1, w2v=1). ``number_of_dofs`` is the number of degrees of freedom associated with the function space. The name of the argument is ``"basis_"<field_function_space>`` or ``"diff_basis_"<field_function_space>``, as appropriate.
 
         2) If it is an orientation array, include the associated argument. The argument is an integer array with intent ``in``. There is one dimension of size the local degrees of freedom for the function space. The name of the array is ``"orientation_"<field_function_space>``.
 
@@ -851,13 +831,15 @@ conventions, are:
 
     1) include integer scalar arguments with intent ``in`` that specify the extent of the basis/diff-basis arrays:
 
-       1) If ``gh_shape`` is ``gh_evaluator`` then pass ``n_xyz``
-       2) if ``gh_shape`` is ``gh_quadrature_XYoZ`` then pass ``n_xy`` and ``n_z``
+       1) If ``evaluator_shape`` is of type ``*_XYZ`` then pass ``n_xyz``
+       2) If ``evaluator_shape`` is of type ``*_XYoZ`` then pass ``n_xy`` and ``n_z``
+       3) If ``evaluator_shape`` is of type ``*_XoYoZ`` then pass ``n_x``, ``n_y`` and ``n_z``
 
-    2) if Quadrature is required (``gh_shape`` is of type ``gh_quadrature_*``) then include weights which are real arrays of kind ``r_def``:
+    2) if Quadrature is required (``evaluator_shape`` is of type ``quadrature_type_*``) then include weights which are real arrays of kind ``r_def``:
 
-       1) If ``gh_quadrature_XYoZ`` pass in ``w_XZ(n_xy)`` and ``w_Z(n_z)``
-
+       1) If ``quadrature_type_XYZ`` pass in ``w_XZY(n_xyz)``
+       2) If ``quadrature_type_XYoZ`` pass in ``w_XZ(n_xy)`` and ``w_z(n_z)``
+       3) If ``quadrature_type_XoYoZ`` pass in ``w_X(n_x)``, ``w_Y(n_y)`` and ``w_z(n_z)``
 
 Rules for CMA Kernels
 #####################
@@ -947,9 +929,7 @@ Application/Inverse-Application
 A kernel applying a CMA operator requires the column-indirection
 dofmap for both the to- and from-function spaces of the CMA
 operator. Since it does not have any LMA operator arguments it does
-not require the ``ncell_3d`` and ``nlayers`` scalar arguments. (Since a
-column-wise operator is, by definition, assembled for a whole column,
-there is no loop over levels when applying it.)
+not require the ``ncell_3d`` and ``nlayers`` scalar arguments.
 The full set of rules is then:
 
     1) Include the ``cell`` argument. ``cell`` is an integer and has
@@ -975,7 +955,7 @@ The full set of rules is then:
        is considered to be before the ``from`` function space of the
        same operator as it appears first in lexicographic order):
 
-       1) Include the number of degrees of freedom per cell for the associated
+       1) Include the number of degrees of freedom for the associated
 	  function space. This is an integer with intent ``in``. The name
 	  of this argument is ``"ndf_"<field_function_space>``.
        2) Include the number of unique degrees of freedom for the associated
@@ -1034,28 +1014,12 @@ following four rules:
     means that we can determine the number of dofs uniquely when a
     scalar is written to.
 
-The built-ins supported for the Dynamo 0.3 API are listed in alphabetical
-order below (apart from increment versions of built-ins which are paired
-with their corresponding non-increment versions). For clarity, the calculation
+The built-ins supported for the Dynamo 0.3 API are
+listed in alphabetical order below. For clarity, the calculation
 performed by each built-in is described using Fortran array syntax; this
 does not necessarily reflect the actual implementation of the
 built-in (*e.g.* it could be implemented by PSyclone
 generating a call to an optimised maths library).
-
-axmy
-++++
-
-**axmy** (*a*, *field1*, *field2*, *field3*)
-
-Performs: ::
-   
-  field3(:) = a*field1(:) - field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *a*
-* type(field_type), intent(in) :: *field1*, *field2*
-* type(field_type), intent(out) :: *field3*
 
 axpby
 +++++
@@ -1064,7 +1028,7 @@ axpby
 
 Performs: ::
    
-  field3(:) = a*field1(:) + b*field2(:)
+   field3(:) = a*field1(:) + b*field2(:)
 
 where:
 
@@ -1079,13 +1043,13 @@ inc_axpby
 
 Performs: ::
    
-  field1(:) = a*field1(:) + b*field2(:)
+   field1(:) = a*field1(:) + b*field2(:)
 
 where:
 
 * real(r_def), intent(in) :: *a*, *b*
 * type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
+* type(field_type),    intent(in) :: *field2*
 
 axpy
 ++++
@@ -1094,7 +1058,7 @@ axpy
 
 Performs: ::
    
-  field3(:) = a*field1(:) + field2(:)
+   field3(:) = a*field1(:) + field2(:)
 
 where:
 
@@ -1110,13 +1074,13 @@ inc_axpy
 Performs an AXPY and returns the result as an increment to the first
 field: ::
    
-  field1(:) = a*field1(:) + field2(:)
+   field1(:) = a*field1(:) + field2(:)
 
 where:
 
 * real(r_def), intent(in) :: *a*
 * type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
+* type(field_type),    intent(in) :: *field2*
 
 copy_field
 ++++++++++
@@ -1125,7 +1089,7 @@ copy_field
 
 Copy the values from *field1* into *field2*: ::
 
-  field2(:) = field1(:)
+   field2(:) = field1(:)
 
 where:
 
@@ -1139,13 +1103,27 @@ copy_scaled_field
 
 Multiplies a field by a scalar and stores the result in a second field: ::
   
-  field2(:) = value*field1(:)
+  field2(:) = value * field1(:)
 
 where:
 
 * real(r_def), intent(in) :: *value*
 * type(field_type), intent(in) :: *field1*
 * type(field_type), intent(out) :: *field2*
+
+divide_field
+++++++++++++
+
+**divide_field** (*field1*, *field2*)
+
+Divides the first field by the second and returns it: ::
+
+   field1(:) = field1(:) / field2(:)
+
+where:
+
+* type(field_type), intent(inout) :: *field1*
+* type(field_type),    intent(in) :: *field2*
 
 divide_fields
 +++++++++++++
@@ -1154,55 +1132,12 @@ divide_fields
 
 Divides the first field by the second and returns the result in the third: ::
 
-  field3(:) = field1(:)/field2(:)
+   field3(:) = field1(:) / field2(:)
 
 where:
 
 * type(field_type), intent(in) :: *field1*, *field2*
 * type(field_type), intent(out) :: *field3*
-
-inc_divide_field
-++++++++++++++++
-
-**inc_divide_field** (*field1*, *field2*)
-
-Divides the first field by the second and returns it: ::
-
-  field1(:) = field1(:)/field2(:)
-
-where:
-
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-inc_field
-+++++++++
-
-**inc_field** (*field1*, *field2*)
-
-Adds the second field to the first and returns it: ::
-
-  field1(:) = field1(:) + field2(:)
-
-where:
-
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-inc_xpby
-++++++++
-
-**inc_xpby** (*field1*, *b*, *field2*)
-
-Performs: ::
-
-  field1(:) = field1(:) + b*field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *b*
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
 
 inner_product
 +++++++++++++
@@ -1218,27 +1153,23 @@ where:
 * type(field_type), intent(in) :: *field1*, *field2*
 * real(r_def), intent(out) :: *sumval*
 
-.. note:: When used with distributed memory this built-in will trigger
+.. note:: when used with distributed memory this built-in will trigger
           the addition of a global sum which may affect the
           performance and/or scalability of the code.
 
-inner_self_product
-++++++++++++++++++
+inc_field
++++++++++
 
-**inner_self_product** (*field1*, *sumval*)
+**inc_field** (*field1*, *field2*)
 
-Computes the inner product of the field *field1* by itself, *i.e.*: ::
+Adds the second field to the first and returns it: ::
 
-  sumval = SUM(field1(:)*field1(:))
+  field1(:) = field1(:) + field2(:)
 
 where:
 
-* type(field_type), intent(in) :: *field1*
-* real(r_def), intent(out) :: *sumval*
-
-.. note:: When used with distributed memory this built-in will trigger
-          the addition of a global sum which may affect the
-          performance and/or scalability of the code.
+* type(field_type), intent(inout) :: *field1*
+* type(field_type),    intent(in) :: *field2*
 
 minus_fields
 ++++++++++++
@@ -1270,20 +1201,6 @@ where:
 * type(field_type), intent(in) :: *field1*, *field2*
 * type(field_type), intent(out) :: *field3*
 
-inc_multiply_field
-++++++++++++++++++
-
-**inc_multiply_field** (*field1*, *field2*)
-
-Multiplies the first field by the second and returns it: ::
-
-  field1(:) = field1(:)*field2(:)
-
-where:
-
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
 plus_fields
 +++++++++++
 
@@ -1299,20 +1216,6 @@ where:
 * type(field_type), intent(in) :: *field2*
 * type(field_type), intent(out) :: *field3*
 
-raise_field
-+++++++++++
-
-**raise_field** (*field1*, *scalar*)
-
-Raises a field to a scalar value and returns the field: ::
-
-  field1(:) = field1(:)**scalar
-
-where:
-
-* type(field_type), intent(inout) :: *field1*
-* real(r_def), intent(in) :: *scalar*
-
 scale_field
 +++++++++++
 
@@ -1320,11 +1223,11 @@ scale_field
 
 Multiplies a field by a scalar value and returns the field: ::
 
-  field1(:) = scalar*field1(:)
+  field1(:) = scalar * field1(:)
 
 where:
 
-* real(r_def), intent(in) :: *scalar*
+* real(r_def),      intent(in) :: *scalar*
 * type(field_type), intent(inout) :: *field1*
 
 set_field_scalar
@@ -1332,16 +1235,11 @@ set_field_scalar
 
 **set_field_scalar** (*value*, *field*)
 
-Sets all elements of the field *field* to the value *value*: ::
-
-  field1(:) = value
-
-where:
+Set all elements of the field *field* to the value *value*.
+The field may be on any function space.
 
 * type(field_type), intent(out) :: *field*
 * real(r_def), intent(in) :: *value*
-
-.. note:: The field may be on any function space.
 
 sum_field
 +++++++++
@@ -1358,42 +1256,42 @@ where:
 * type(field_type), intent(in) :: field
 * real(r_def), intent(out) :: sumval
 
-.. note:: When used with distributed memory this built-in will trigger
+.. note:: when used with distributed memory this built-in will trigger
           the addition of a global sum which may affect the
           performance and/or scalability of the code.
 
 Boundary Conditions
 -------------------
 
-In the dynamo0.3 API, boundary conditions for a field or LMA operator can
-be enforced by the algorithm developer by calling the Kernels
-``enforce_bc_type`` or ``enforce_operator_bc_type``,
-respectively. These kernels take a field or operator as input and apply
+In the dynamo0.3 API, boundary conditions for a field can be enforced
+by the algorithm developer by calling a particular Kernel called
+``enforce_bc_type``. This kernel takes a field as input and applies
 boundary conditions. For example:
 
 ::
 
-  call invoke( kernel_type(field1, field2),      &
-               enforce_bc_type(field1),          &
-	       kernel_with_op_type(field1, op1), &
-	       enforce_operator_bc_type(op1)     &
+  call invoke( kernel_type(field1, field2), &
+               enforce_bc_type(field1)      &
              )
 
 The particular boundary conditions that are applied are not known by
-PSyclone, PSyclone simply recognises these kernels by their names and passes
-pre-specified dofmap and boundary_value arrays into the kernel
-implementations, the contents of which are set by the LFRic
+PSyclone, PSyclone simply recognises this kernel by its name and passes
+pre-specified dofmap and boundary_value arrays into its kernel
+implementation, the contents of which are set by the LFRic
 infrastructure.
 
-Up to and including version 1.4.0 of PSyclone, boundary conditions
-were applied automatically after a call to ``matrix_vector_type`` if
-the field arguments were on a vector function space (one of ``w1``,
-``w2``, ``w2h`` or ``w2v``). With the subsequent introduction of the
-ability to apply boundary conditions to operators this functionality
-is no longer required and has been removed.
+There is one situation where boundary conditions are applied without
+the algorithm developer having to specify them explicitly. Boundary
+conditions are added automatically after a call to
+``matrix_vector_type`` if the fields being passed into the call are on
+a vector function space (one of ``w1``, ``w2``, ``w2h`` or
+``w2v``). This functionality was requested by the scientists to avoid
+having to write a large number of ``enforce_bc_type`` calls in the
+algorithm layer as ``matrix_vector_type`` may be used a large number
+of times in an algorithm.
 
 Example ``eg4`` in the ``examples/dynamo`` directory includes a call
-to ``enforce_bc_kernel_type`` so can be used to see the boundary condition
+to ``matrix_vector_type`` so can be used to see the boundary condition
 code that is added by PSyclone. See the ``README`` in the
 ``examples/dynamo`` directory for instructions on how to run this
 example.
@@ -1447,18 +1345,18 @@ that the transformation is only valid for this particular API. If the
 name of the transformation includes "Dynamo" then it should work with
 all versions of the Dynamo API.
 
-.. autoclass:: psyclone.transformations.DynamoLoopFuseTrans
+.. autoclass:: transformations.DynamoLoopFuseTrans
     :members:
     :noindex:
 
-.. autoclass:: psyclone.transformations.DynamoOMPParallelLoopTrans
+.. autoclass:: transformations.DynamoOMPParallelLoopTrans
     :members:
     :noindex:
 
-.. autoclass:: psyclone.transformations.Dynamo0p3OMPLoopTrans
+.. autoclass:: transformations.Dynamo0p3OMPLoopTrans
     :members:
     :noindex:
 
-.. autoclass:: psyclone.transformations.Dynamo0p3ColourTrans
+.. autoclass:: transformations.Dynamo0p3ColourTrans
     :members:
     :noindex:

@@ -9,8 +9,8 @@
 '''Example script showing how to apply OpenMP transformations to
 dynamo code'''
 
-from psyclone.parse import parse
-from psyclone.psyGen import PSyFactory
+from parse import parse
+from psyGen import PSyFactory
 API = "dynamo0.1"
 _, INVOKEINFO = parse("dynamo_algorithm_mod.F90", api=API)
 PSY = PSyFactory(API).create(INVOKEINFO)
@@ -18,7 +18,7 @@ print PSY.gen
 
 print PSY.invokes.names
 
-from psyclone.psyGen import TransInfo
+from psyGen import TransInfo
 TRANS = TransInfo()
 print TRANS.list
 

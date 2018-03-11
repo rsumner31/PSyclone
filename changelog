@@ -1,47 +1,5 @@
-        1) #20 and PR #28 Add dependence analysis (and a Move
-        transformation) to PSyclone. This will subsequently allow for
-        the safe implementation of more complex schedule transformations
-        and optimisations.
-
-	2) #16 and PR #29 Update and add new PSyclone-generated builtins
-	to support the functionaliity required by the current LFRic code.
-
-        3) #43 and PR #44 Update of Met Office-specific install script to
-	symlink the generator.py file rather than copy it.
-
-	4) #40 and PR #47 Update example dynamo/eg3 to use builtins and to
-	merge invokes together as much as possible
-
-	5) #45 and PR #49 Change of kernel metadata names from
-	evaluator_shape to gh_shape and modifications to its values.
-
-	6) #3 and PR #51 Restructure repository to allow installation via
-	pip. Due to this change we can now use travis and coveralls within
-	github for automated testing. Also, new releases are now
-	automatically uploaded to pypi (via travis) and status badges can
-	now be used so have been added to the README.md file (which is
-	shown on the main github page).
-
-release 1.4.1
-
-	1) #22 Updated PSyclone to support enforce_operator_bc_kernel (in
-	addition to the existing enforce_bc_kernel) for boundary
-	conditions. PSyclone no longer adds in boundary condition calls
-	after a call to matrix_vector_kernel, it is up to the user to add
-	them in the algorithm layer in all cases. Also fixes a bug
-	introduced in 1.4.0 issue #12.
-
-release 1.4.0
-
-        1) #2 Add support for kernel meta-data changes required to support
+        1) #6 Add support for kernel meta-data changes required to support
         Column-wise operators (Column Matrix Assembly).
-
-	2) #6 Implement support for Column Matrix Assembly (CMA) in
-	PSyclone.
-
-	3) #12 Add support for the any_w2 function space descriptor
-
-	4) #33 Update documentation referring to fparser.
 
 release 1.3.3
 
