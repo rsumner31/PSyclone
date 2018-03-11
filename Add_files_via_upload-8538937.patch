@@ -1,0 +1,612 @@
+From 8538937bd5a3c5c091d9baebf8552ecaef3ad0a6 Mon Sep 17 00:00:00 2001
+From: Sean Rhone <Espionage724@users.noreply.github.com>
+Date: Mon, 1 May 2017 05:01:28 -0400
+Subject: [PATCH] Add files via upload
+
+---
+ Disable Automatic Maintenance.bat             |  1 +
+ Disable Automatic Updates.bat                 |  4 ++++
+ Disable Biometrics.bat                        |  1 +
+ Disable Cortana and Web Search.bat            |  1 +
+ Disable Dynamic Ticks.bat                     |  1 +
+ Disable Error Reporting.bat                   |  2 ++
+ Disable Experimentation.bat                   |  1 +
+ Disable Hibernation and Fast Start.bat        |  1 +
+ Disable HomeGroup.bat                         |  1 +
+ Disable License Telemetry.bat                 |  1 +
+ Disable MRT Reporting.bat                     |  1 +
+ Disable Network Connectivity Testing.bat      |  1 +
+ Disable P2P Networking.bat                    |  1 +
+ Disable Settings Sync.bat                     |  3 +++
+ Disable SmartScreen.bat                       |  2 ++
+ Disable Startup Delay.bat                     |  1 +
+ Disable Sync Provider Notifications.bat       |  1 +
+ Disable System Restore.bat                    |  4 ++++
+ Disable Tasks.bat                             | 42 ++++++++++++++++++++++++++++++++++++++++++
+ Disable Telemetry Features.bat                |  1 +
+ Disable User Account Control.bat              |  1 +
+ Disable Windows Defender.bat                  |  1 +
+ Disable Windows Feedback.bat                  |  2 ++
+ Disable Windows Insider Pane.bat              |  1 +
+ Disable Windows Store.bat                     |  2 ++
+ Disable Windows Tips.bat                      |  4 ++++
+ Disable Xbox Bar.bat                          |  2 ++
+ Increase Taskbar Transparency.bat             |  1 +
+ Maintenance.bat                               |  6 ++++++
+ NetFX3 USB Install.bat                        |  1 +
+ Open Pictures With Windows Photo Viewer.bat   |  7 +++++++
+ Prevent MRT.bat                               |  1 +
+ Remove Most Modern UI Apps.ps1                |  1 +
+ Remove OneDrive.bat                           |  5 +++++
+ Remove Windows Search.bat                     |  1 +
+ Services.bat                                  | 90 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ Show All Folders in File Explorer Pane.bat    |  1 +
+ Spinesnap WU Driver Disable.bat               | 17 +++++++++++++++++
+ StevenBlack Hosts File.ps1                    |  4 ++++
+ Use Uncompressed JPEG Desktop Backgrounds.bat |  1 +
+ VPN.AC OVPN Config.ps1                        |  3 +++
+ pool.ntp.org Time Servers.bat                 |  1 +
+ 42 files changed, 224 insertions(+)
+ create mode 100644 Disable Automatic Maintenance.bat
+ create mode 100644 Disable Automatic Updates.bat
+ create mode 100644 Disable Biometrics.bat
+ create mode 100644 Disable Cortana and Web Search.bat
+ create mode 100644 Disable Dynamic Ticks.bat
+ create mode 100644 Disable Error Reporting.bat
+ create mode 100644 Disable Experimentation.bat
+ create mode 100644 Disable Hibernation and Fast Start.bat
+ create mode 100644 Disable HomeGroup.bat
+ create mode 100644 Disable License Telemetry.bat
+ create mode 100644 Disable MRT Reporting.bat
+ create mode 100644 Disable Network Connectivity Testing.bat
+ create mode 100644 Disable P2P Networking.bat
+ create mode 100644 Disable Settings Sync.bat
+ create mode 100644 Disable SmartScreen.bat
+ create mode 100644 Disable Startup Delay.bat
+ create mode 100644 Disable Sync Provider Notifications.bat
+ create mode 100644 Disable System Restore.bat
+ create mode 100644 Disable Tasks.bat
+ create mode 100644 Disable Telemetry Features.bat
+ create mode 100644 Disable User Account Control.bat
+ create mode 100644 Disable Windows Defender.bat
+ create mode 100644 Disable Windows Feedback.bat
+ create mode 100644 Disable Windows Insider Pane.bat
+ create mode 100644 Disable Windows Store.bat
+ create mode 100644 Disable Windows Tips.bat
+ create mode 100644 Disable Xbox Bar.bat
+ create mode 100644 Increase Taskbar Transparency.bat
+ create mode 100644 Maintenance.bat
+ create mode 100644 NetFX3 USB Install.bat
+ create mode 100644 Open Pictures With Windows Photo Viewer.bat
+ create mode 100644 Prevent MRT.bat
+ create mode 100644 Remove Most Modern UI Apps.ps1
+ create mode 100644 Remove OneDrive.bat
+ create mode 100644 Remove Windows Search.bat
+ create mode 100644 Services.bat
+ create mode 100644 Show All Folders in File Explorer Pane.bat
+ create mode 100644 Spinesnap WU Driver Disable.bat
+ create mode 100644 StevenBlack Hosts File.ps1
+ create mode 100644 Use Uncompressed JPEG Desktop Backgrounds.bat
+ create mode 100644 VPN.AC OVPN Config.ps1
+ create mode 100644 pool.ntp.org Time Servers.bat
+
+diff --git a/Disable Automatic Maintenance.bat b/Disable Automatic Maintenance.bat
+new file mode 100644
+index 0000000..c31f62c
+--- /dev/null
++++ b/Disable Automatic Maintenance.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance" /v "MaintenanceDisabled" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Automatic Updates.bat b/Disable Automatic Updates.bat
+new file mode 100644
+index 0000000..fdd84e8
+--- /dev/null
++++ b/Disable Automatic Updates.bat
+@@ -0,0 +1,4 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v "NoAutoUpdate" /t "REG_DWORD" /d "0" /f
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v "AUOptions" /t "REG_DWORD" /d "2" /f
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v "ScheduledInstallDay" /t "REG_DWORD" /d "0" /f
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v "ScheduledInstallTime" /t "REG_DWORD" /d "3" /f
+\ No newline at end of file
+diff --git a/Disable Biometrics.bat b/Disable Biometrics.bat
+new file mode 100644
+index 0000000..232d326
+--- /dev/null
++++ b/Disable Biometrics.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Biometrics\Credential Provider" /v "Enabled" /t "REG_DWORD" /d "0" /f
+\ No newline at end of file
+diff --git a/Disable Cortana and Web Search.bat b/Disable Cortana and Web Search.bat
+new file mode 100644
+index 0000000..9ef304f
+--- /dev/null
++++ b/Disable Cortana and Web Search.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v "AllowCortana" /t REG_DWORD /d "0" /f
+\ No newline at end of file
+diff --git a/Disable Dynamic Ticks.bat b/Disable Dynamic Ticks.bat
+new file mode 100644
+index 0000000..120a958
+--- /dev/null
++++ b/Disable Dynamic Ticks.bat
+@@ -0,0 +1 @@
++bcdedit /set "disabledynamictick" "Yes"
+\ No newline at end of file
+diff --git a/Disable Error Reporting.bat b/Disable Error Reporting.bat
+new file mode 100644
+index 0000000..55b08f2
+--- /dev/null
++++ b/Disable Error Reporting.bat
+@@ -0,0 +1,2 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d "1" /f
++reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v "Disabled" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Experimentation.bat b/Disable Experimentation.bat
+new file mode 100644
+index 0000000..f90c827
+--- /dev/null
++++ b/Disable Experimentation.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Microsoft\PolicyManager\default\System\AllowExperimentation" /v "value" /t "REG_DWORD" /d "0" /f
+\ No newline at end of file
+diff --git a/Disable Hibernation and Fast Start.bat b/Disable Hibernation and Fast Start.bat
+new file mode 100644
+index 0000000..c689f6e
+--- /dev/null
++++ b/Disable Hibernation and Fast Start.bat
+@@ -0,0 +1 @@
++powercfg /H off
+\ No newline at end of file
+diff --git a/Disable HomeGroup.bat b/Disable HomeGroup.bat
+new file mode 100644
+index 0000000..50ce02a
+--- /dev/null
++++ b/Disable HomeGroup.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\HomeGroup" /v "DisableHomeGroup" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable License Telemetry.bat b/Disable License Telemetry.bat
+new file mode 100644
+index 0000000..f42bd79
+--- /dev/null
++++ b/Disable License Telemetry.bat
+@@ -0,0 +1 @@
++reg add "HKLM\Software\Policies\Microsoft\Windows NT\CurrentVersion\Software Protection Platform" /v "NoGenTicket" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable MRT Reporting.bat b/Disable MRT Reporting.bat
+new file mode 100644
+index 0000000..0ee0142
+--- /dev/null
++++ b/Disable MRT Reporting.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\MRT" /v "DontReportInfectionInformation" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Network Connectivity Testing.bat b/Disable Network Connectivity Testing.bat
+new file mode 100644
+index 0000000..9a7cf68
+--- /dev/null
++++ b/Disable Network Connectivity Testing.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\NetworkConnectivityStatusIndicator" /v "NoActiveProbe" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable P2P Networking.bat b/Disable P2P Networking.bat
+new file mode 100644
+index 0000000..deb1e2c
+--- /dev/null
++++ b/Disable P2P Networking.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Peernet" /v "Disabled" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Settings Sync.bat b/Disable Settings Sync.bat
+new file mode 100644
+index 0000000..146bdc3
+--- /dev/null
++++ b/Disable Settings Sync.bat
+@@ -0,0 +1,3 @@
++reg add "HKLM\Software\Policies\Microsoft\Windows\SettingSync" /v "DisableSettingSync" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\Software\Policies\Microsoft\Windows\SettingSync" /v "DisableSettingSyncUserOverride" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\Software\Policies\Microsoft\Windows\SettingSync" /v "EnableBackupForWin8Apps" /t "REG_DWORD" /d "0" /f
+\ No newline at end of file
+diff --git a/Disable SmartScreen.bat b/Disable SmartScreen.bat
+new file mode 100644
+index 0000000..c4bc2ee
+--- /dev/null
++++ b/Disable SmartScreen.bat
+@@ -0,0 +1,2 @@
++reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /v "SmartScreenEnabled" /t "REG_SZ" /d "Off" /f
++reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\AppHost" /v "SmartScreenEnabled" /t "REG_SZ" /d "Off" /f
+\ No newline at end of file
+diff --git a/Disable Startup Delay.bat b/Disable Startup Delay.bat
+new file mode 100644
+index 0000000..dee29b3
+--- /dev/null
++++ b/Disable Startup Delay.bat
+@@ -0,0 +1 @@
++reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" /v "StartupDelayInMSec" /t "REG_DWORD" /d "0" /f
+\ No newline at end of file
+diff --git a/Disable Sync Provider Notifications.bat b/Disable Sync Provider Notifications.bat
+new file mode 100644
+index 0000000..1bebaf6
+--- /dev/null
++++ b/Disable Sync Provider Notifications.bat
+@@ -0,0 +1 @@
++reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "ShowSyncProviderNotifications" /t "REG_DWORD" /d "0" /f
+\ No newline at end of file
+diff --git a/Disable System Restore.bat b/Disable System Restore.bat
+new file mode 100644
+index 0000000..e6f041a
+--- /dev/null
++++ b/Disable System Restore.bat
+@@ -0,0 +1,4 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore" /v "DisableConfig" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore" /v "DisableSR " /t "REG_DWORD" /d "1" /f
++reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore" /v "DisableConfig" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore" /v "DisableSR " /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Tasks.bat b/Disable Tasks.bat
+new file mode 100644
+index 0000000..4549034
+--- /dev/null
++++ b/Disable Tasks.bat
+@@ -0,0 +1,42 @@
++schtasks /Change /TN "Microsoft\Windows\AppID\SmartScreenSpecific" /disable
++schtasks /Change /TN "Microsoft\XblGameSave\XblGameSaveTask" /disable
++schtasks /Change /TN "Microsoft\Windows\Application Experience\AitAgent" /disable
++schtasks /Change /TN "Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser" /disable
++schtasks /Change /TN "Microsoft\Windows\Application Experience\ProgramDataUpdater" /disable
++schtasks /Change /TN "Microsoft\Windows\Application Experience\StartupAppTask" /disable
++schtasks /Change /TN "Microsoft\Windows\Autochk\Proxy" /disable
++schtasks /Change /TN "Microsoft\Windows\CloudExperienceHost\CreateObjectTask" /disable
++schtasks /Change /TN "Microsoft\Windows\Customer Experience Improvement Program\BthSQM" /disable
++schtasks /Change /TN "Microsoft\Windows\Customer Experience Improvement Program\Consolidator" /disable
++schtasks /Change /TN "Microsoft\Windows\Customer Experience Improvement Program\KernelCeipTask" /disable
++schtasks /Change /TN "Microsoft\Windows\Customer Experience Improvement Program\Uploader" /disable
++schtasks /Change /TN "Microsoft\Windows\Customer Experience Improvement Program\UsbCeip" /disable
++schtasks /Change /TN "Microsoft\Windows\Diagnosis\Scheduled" /disable
++schtasks /Change /TN "Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector" /disable
++schtasks /Change /TN "Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticResolver" /disable
++schtasks /Change /TN "Microsoft\Windows\DiskFootprint\Diagnostics" /disable
++schtasks /Change /TN "Microsoft\Windows\DiskFootprint\StorageSense" /disable
++schtasks /Change /TN "Microsoft\Windows\FileHistory\File History (maintenance mode)" /disable
++schtasks /Change /TN "Microsoft\Windows\Maintenance\WinSAT" /disable
++schtasks /Change /TN "Microsoft\Windows\Maps\MapsToastTask" /disable
++schtasks /Change /TN "Microsoft\Windows\Maps\MapsUpdateTask" /disable
++schtasks /Change /TN "Microsoft\Windows\NetTrace\GatherNetworkInfo" /disable
++schtasks /Change /TN "Microsoft\Windows\PI\Sqm-Tasks" /disable
++schtasks /Change /TN "Microsoft\Windows\Power Efficiency Diagnostics\AnalyzeSystem" /disable
++schtasks /Change /TN "Microsoft\Windows\RemoteAssistance\RemoteAssistanceTask" /disable
++schtasks /Change /TN "Microsoft\Windows\RetailDemo\CleanupOfflineContent" /disable
++schtasks /Change /TN "Microsoft\Windows\SettingSync\BackgroundUploadTask" /disable
++schtasks /Change /TN "Microsoft\Windows\SettingSync\BackupTask" /disable
++schtasks /Change /TN "Microsoft\Windows\SettingSync\NetworkStateChangeTask" /disable
++schtasks /Change /TN "Microsoft\Windows\Shell\FamilySafetyMonitor" /disable
++schtasks /Change /TN "Microsoft\Windows\Shell\FamilySafetyRefresh" /disable
++schtasks /Change /TN "Microsoft\Windows\Shell\FamilySafetyUpload" /disable
++schtasks /Change /TN "Microsoft\Windows\SpacePort\SpaceAgentTask" /disable
++schtasks /Change /TN "Microsoft\Windows\SpacePort\SpaceManagerTask" /disable
++schtasks /Change /TN "Microsoft\Windows\Speech\SpeechModelDownloadTask" /disable
++schtasks /Change /TN "Microsoft\Windows\WDI\ResolutionHost" /disable
++schtasks /Change /TN "Microsoft\Windows\Windows Defender\Windows Defender Cache Maintenance" /disable
++schtasks /Change /TN "Microsoft\Windows\Windows Defender\Windows Defender Cleanup" /disable
++schtasks /Change /TN "Microsoft\Windows\Windows Defender\Windows Defender Scheduled Scan" /disable
++schtasks /Change /TN "Microsoft\Windows\Windows Defender\Windows Defender Verification" /disable
++schtasks /Change /TN "Microsoft\Windows\Windows Error Reporting\QueueReporting" /disable
+\ No newline at end of file
+diff --git a/Disable Telemetry Features.bat b/Disable Telemetry Features.bat
+new file mode 100644
+index 0000000..08f121c
+--- /dev/null
++++ b/Disable Telemetry Features.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v "AllowTelemetry" /t "REG_DWORD" /d "0" /f
+\ No newline at end of file
+diff --git a/Disable User Account Control.bat b/Disable User Account Control.bat
+new file mode 100644
+index 0000000..3693a21
+--- /dev/null
++++ b/Disable User Account Control.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v "EnableLUA" /t "REG_DWORD" /d "0" /f
+\ No newline at end of file
+diff --git a/Disable Windows Defender.bat b/Disable Windows Defender.bat
+new file mode 100644
+index 0000000..6a7bf9a
+--- /dev/null
++++ b/Disable Windows Defender.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender" /v "DisableAntiSpyware" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Windows Feedback.bat b/Disable Windows Feedback.bat
+new file mode 100644
+index 0000000..4e2e912
+--- /dev/null
++++ b/Disable Windows Feedback.bat
+@@ -0,0 +1,2 @@
++reg add "HKCU\SOFTWARE\Microsoft\Siuf\Rules" /v "NumberOfSIUFInPeriod" /t "REG_DWORD" /d "0" /f
++reg delete "HKCU\SOFTWARE\Microsoft\Siuf\Rules" /v "PeriodInNanoSeconds" /f
+\ No newline at end of file
+diff --git a/Disable Windows Insider Pane.bat b/Disable Windows Insider Pane.bat
+new file mode 100644
+index 0000000..5835e11
+--- /dev/null
++++ b/Disable Windows Insider Pane.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Microsoft\WindowsSelfHost\UI\Visibility" /v "HideInsiderPage" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Windows Store.bat b/Disable Windows Store.bat
+new file mode 100644
+index 0000000..4a2e2b6
+--- /dev/null
++++ b/Disable Windows Store.bat
+@@ -0,0 +1,2 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\WindowsStore" /v "RemoveWindowsStore" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\SOFTWARE\Policies\Microsoft\WindowsStore" /v "DisableStoreApps" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Windows Tips.bat b/Disable Windows Tips.bat
+new file mode 100644
+index 0000000..8505abd
+--- /dev/null
++++ b/Disable Windows Tips.bat
+@@ -0,0 +1,4 @@
++reg add "HKLM\Software\Policies\Microsoft\Windows\CloudContent" /v "DisableSoftLanding" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\Software\Policies\Microsoft\Windows\CloudContent" /v "DisableWindowsSpotlightFeatures" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\Software\Policies\Microsoft\Windows\CloudContent" /v "DisableWindowsConsumerFeatures" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\Software\Policies\Microsoft\Windows\DataCollection" /v "DoNotShowFeedbackNotifications" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Disable Xbox Bar.bat b/Disable Xbox Bar.bat
+new file mode 100644
+index 0000000..d92727f
+--- /dev/null
++++ b/Disable Xbox Bar.bat
+@@ -0,0 +1,2 @@
++reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR" /v "AppCaptureEnabled" /t "REG_DWORD" /d "0" /f
++reg add "HKCU\System\GameConfigStore" /v "GameDVR_Enabled" /t "REG_DWORD" /d "0" /f
+\ No newline at end of file
+diff --git a/Increase Taskbar Transparency.bat b/Increase Taskbar Transparency.bat
+new file mode 100644
+index 0000000..a7a205e
+--- /dev/null
++++ b/Increase Taskbar Transparency.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "UseOLEDTaskbarTransparency" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Maintenance.bat b/Maintenance.bat
+new file mode 100644
+index 0000000..5168ddf
+--- /dev/null
++++ b/Maintenance.bat
+@@ -0,0 +1,6 @@
++"%windir%\system32\Dism.exe" /online /Cleanup-Image /StartComponentCleanup /ResetBase /RestoreHealth
++"%windir%\system32\sfc.exe" /scannow
++"%windir%\system32\cleanmgr.exe"
++"%ProgramFiles%\CCleaner\CCEnhancer-4.4.2.exe"
++"%ProgramFiles%\CCleaner\CCleaner64.exe"
++"%windir%\system32\dfrgui.exe"
+\ No newline at end of file
+diff --git a/NetFX3 USB Install.bat b/NetFX3 USB Install.bat
+new file mode 100644
+index 0000000..f6c6385
+--- /dev/null
++++ b/NetFX3 USB Install.bat
+@@ -0,0 +1 @@
++Dism /online /enable-feature /featurename:"NetFX3" /All /Source:"D:\sources\sxs" /LimitAccess
+diff --git a/Open Pictures With Windows Photo Viewer.bat b/Open Pictures With Windows Photo Viewer.bat
+new file mode 100644
+index 0000000..4688f1e
+--- /dev/null
++++ b/Open Pictures With Windows Photo Viewer.bat
+@@ -0,0 +1,7 @@
++reg add "HKCU\Software\Classes\.jpg" /ve /t "REG_SZ" /d "PhotoViewer.FileAssoc.Tiff" /f
++reg add "HKCU\Software\Classes\.jpeg" /ve /t "REG_SZ" /d "PhotoViewer.FileAssoc.Tiff" /f
++reg add "HKCU\Software\Classes\.gif" /ve /t "REG_SZ" /d "PhotoViewer.FileAssoc.Tiff" /f
++reg add "HKCU\Software\Classes\.png" /ve /t "REG_SZ" /d "PhotoViewer.FileAssoc.Tiff" /f
++reg add "HKCU\Software\Classes\.bmp" /ve /t "REG_SZ" /d "PhotoViewer.FileAssoc.Tiff" /f
++reg add "HKCU\Software\Classes\.tiff" /ve /t "REG_SZ" /d "PhotoViewer.FileAssoc.Tiff" /f
++reg add "HKCU\Software\Classes\.ico" /ve /t "REG_SZ" /d "PhotoViewer.FileAssoc.Tiff" /f
+\ No newline at end of file
+diff --git a/Prevent MRT.bat b/Prevent MRT.bat
+new file mode 100644
+index 0000000..b9468dc
+--- /dev/null
++++ b/Prevent MRT.bat
+@@ -0,0 +1 @@
++reg add "HKLM\SOFTWARE\Policies\Microsoft\MRT" /v "DontOfferThroughWUAU" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Remove Most Modern UI Apps.ps1 b/Remove Most Modern UI Apps.ps1
+new file mode 100644
+index 0000000..1597d5f
+--- /dev/null
++++ b/Remove Most Modern UI Apps.ps1
+@@ -0,0 +1 @@
++Get-AppxPackage -allusers | Remove-AppxPackage
+\ No newline at end of file
+diff --git a/Remove OneDrive.bat b/Remove OneDrive.bat
+new file mode 100644
+index 0000000..111bc51
+--- /dev/null
++++ b/Remove OneDrive.bat
+@@ -0,0 +1,5 @@
++taskkill /IM "OneDrive.exe" /F
++%windir%\SysWOW64\OneDriveSetup.exe /uninstall
++rmdir "%UserProfile%\OneDrive" "%ProgramData%\Microsoft OneDrive" "%LocalAppData%\Microsoft\OneDrive" "C:\OneDriveTemp" /S /Q
++reg delete "HKCR\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" /f
++reg delete "HKCR\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" /f
+\ No newline at end of file
+diff --git a/Remove Windows Search.bat b/Remove Windows Search.bat
+new file mode 100644
+index 0000000..19404d8
+--- /dev/null
++++ b/Remove Windows Search.bat
+@@ -0,0 +1 @@
++Dism /online /Disable-Feature /FeatureName:"SearchEngine-Client-Package" /Remove
+\ No newline at end of file
+diff --git a/Services.bat b/Services.bat
+new file mode 100644
+index 0000000..90e1334
+--- /dev/null
++++ b/Services.bat
+@@ -0,0 +1,90 @@
++sc delete "AxInstSV"
++sc delete "AJRouter"
++sc config "BDESVC" start= "disabled"
++sc delete "wbengine"
++sc delete "CDPUserSvc"
++sc delete "CDPSvc"
++sc delete "DiagTrack"
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\PimIndexMaintenanceSvc" /v "Start" /t "REG_DWORD" /d "4" /f
++sc delete "DsSvc"
++sc config "DPS" start= "disabled"
++sc config "WdiServiceHost" start= "disabled"
++sc config "WdiSystemHost" start= "disabled"
++sc delete "dmwappushservice"
++sc delete "MapsBroker"
++sc delete "fhsvc"
++sc delete "lfsvc"
++sc delete "HomeGroupListener"
++sc delete "HomeGroupProvider"
++sc delete "HvHost"
++sc delete "vmickvpexchange"
++sc delete "vmicguestinterface"
++sc delete "vmicshutdown"
++sc delete "vmicheartbeat"
++sc delete "vmicvmsession"
++sc delete "vmicrdv"
++sc delete "vmictimesync"
++sc delete "vmicvss"
++sc delete "irmon"
++sc delete "MessagingService"
++sc delete "diagnosticshub.standardcollector.service"
++sc delete "wlidsvc"
++sc delete "swprv"
++sc delete "smphost"
++sc config "SmsRouter" start= "disabled"
++sc delete "NcbService"
++sc delete "PNRPsvc"
++sc delete "p2psvc"
++sc delete "p2pimsvc"
++sc delete "PerfHost"
++sc delete "pla"
++sc delete "PhoneSvc"
++sc delete "PNRPAutoReg"
++sc delete "wercplsupport"
++sc delete "SessionEnv"
++sc delete "TermService"
++sc delete "UmRdpService"
++sc delete "RemoteRegistry"
++sc delete "RetailDemo"
++sc delete "wscsvc"
++sc delete "SensorDataService"
++sc delete "SensrSvc"
++sc delete "SensorService"
++sc delete "OneSyncSvc"
++sc delete "TapiSrv"
++sc delete "TabletInputService"
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\UserDataSvc" /v "Start" /t "REG_DWORD" /d "4" /f
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\UnistoreSvc" /v "Start" /t "REG_DWORD" /d "4" /f
++sc delete "VSS"
++sc delete "WalletService"
++sc delete "SDRSVC"
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\WdNisSvc" /v "Start" /t "REG_DWORD" /d "4" /f
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\WinDefend" /v "Start" /t "REG_DWORD" /d "4" /f
++sc delete "WEPHOSTSVC"
++sc delete "WerSvc"
++sc delete "wisvc"
++sc delete "icssvc"
++sc delete "Ndu"
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\WpnUserService" /v "Start" /t "REG_DWORD" /d "4" /f
++sc delete "WinRM"
++sc delete "WSearch"
++sc delete "XblAuthManager"
++sc delete "XblGameSave"
++sc delete "XboxNetApiSvc"
++sc delete "WbioSrvc"
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\xbgm" /v "Start" /t "REG_DWORD" /d "4" /f
++sc delete "XboxGipSvc"
++sc delete "spectrum"
++sc delete "wisvc"
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\DevicesFlowUserSvc" /v "Start" /t "REG_DWORD" /d "4" /f
++sc delete "SEMgrSvc"
++sc delete "NaturalAuthentication"
++sc delete "WpnService"
++sc delete "cplspcon"
++sc delete "cphs"
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\Sense" /v "Start" /t "REG_DWORD" /d "4" /f
++sc delete "DcpSvc"
++sc delete "iaStorAfsService"
++reg add "HKLM\SYSTEM\CurrentControlSet\Control\WMI\AutoLogger\AutoLogger-Diagtrack-Listener" /v "Start" /t REG_DWORD /d "4" /f
++reg add "HKLM\SYSTEM\ControlSet001\Control\WMI\AutoLogger\AutoLogger-Diagtrack-Listener" /v "Start" /t REG_DWORD /d "4" /f
++reg add "HKLM\SYSTEM\CurrentControlSet\Services\SecurityHealthService" /v "Start" /t "REG_DWORD" /d "4" /f
+\ No newline at end of file
+diff --git a/Show All Folders in File Explorer Pane.bat b/Show All Folders in File Explorer Pane.bat
+new file mode 100644
+index 0000000..1b09175
+--- /dev/null
++++ b/Show All Folders in File Explorer Pane.bat
+@@ -0,0 +1 @@
++reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "NavPaneShowAllFolders" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Spinesnap WU Driver Disable.bat b/Spinesnap WU Driver Disable.bat
+new file mode 100644
+index 0000000..62813ac
+--- /dev/null
++++ b/Spinesnap WU Driver Disable.bat
+@@ -0,0 +1,17 @@
++:: Initial
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions" /v "DenyDeviceIDs" /t "REG_DWORD" /d "1" /f
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions" /v "DenyDeviceIDsRetroactive" /t "REG_DWORD" /d "0" /f
++
++:: Intel(R) HD Graphics 530
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions\DenyDeviceIDs" /v "1" /t "REG_SZ" /d "PCI\VEN_8086&DEV_191B&SUBSYS_105B1025&REV_06" /f
++
++:: NVIDIA GeForce GTX 970M
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions\DenyDeviceIDs" /v "2" /t "REG_SZ" /d "PCI\VEN_10DE&DEV_13D8&SUBSYS_105B1025&REV_A1" /f
++
++:: Realtek High Definition Audio
++reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions\DenyDeviceIDs" /v "3" /t "REG_SZ" /d "HDAUDIO\FUNC_01&VEN_10EC&DEV_0255&SUBSYS_1025105B&REV_1000" /f
++
++::Lift Restrictions
++::reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions\DenyDeviceIDs" /v "1" /f
++::reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions\DenyDeviceIDs" /v "2" /f
++::reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions\DenyDeviceIDs" /v "3" /f
+\ No newline at end of file
+diff --git a/StevenBlack Hosts File.ps1 b/StevenBlack Hosts File.ps1
+new file mode 100644
+index 0000000..527e0be
+--- /dev/null
++++ b/StevenBlack Hosts File.ps1
+@@ -0,0 +1,4 @@
++Invoke-WebRequest "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts" -OutFile "C:\Windows\System32\drivers\etc\hosts"
++ipconfig /flushdns
++reg add "HKLM\SYSTEM\CurrentControlSet\services\Dnscache\Parameters" /v "MaxNegativeCacheTtl" /t "REG_DWORD" /d "0" /f
++reg add "HKLM\SYSTEM\CurrentControlSet\services\Dnscache\Parameters" /v "MaxCacheTtl" /t "REG_DWORD" /d "1" /f
+\ No newline at end of file
+diff --git a/Use Uncompressed JPEG Desktop Backgrounds.bat b/Use Uncompressed JPEG Desktop Backgrounds.bat
+new file mode 100644
+index 0000000..920e9cc
+--- /dev/null
++++ b/Use Uncompressed JPEG Desktop Backgrounds.bat
+@@ -0,0 +1 @@
++reg add "HKCU\Control Panel\Desktop" /v "JPEGImportQuality" /t "REG_DWORD" /d "100" /f
+\ No newline at end of file
+diff --git a/VPN.AC OVPN Config.ps1 b/VPN.AC OVPN Config.ps1
+new file mode 100644
+index 0000000..8d03717
+--- /dev/null
++++ b/VPN.AC OVPN Config.ps1
+@@ -0,0 +1,3 @@
++New-Item -ItemType Directory -Force -Path "~\OpenVPN\config"
++Invoke-WebRequest "https://vpn.ac/ovpn/AES-256-UDP/us-east_ashburn-aes256-udp.ovpn" -OutFile "~\OpenVPN\config\US East, Ashburn.ovpn"
++Invoke-WebRequest "https://vpn.ac/ovpn/AES-256-UDP/canada_toronto-aes256-udp.ovpn" -OutFile "~\OpenVPN\config\Canada, Toronto (P2P).ovpn"
+\ No newline at end of file
+diff --git a/pool.ntp.org Time Servers.bat b/pool.ntp.org Time Servers.bat
+new file mode 100644
+index 0000000..9edb898
+--- /dev/null
++++ b/pool.ntp.org Time Servers.bat
+@@ -0,0 +1 @@
++w32tm /config /syncfromflags:manual /manualpeerlist:"0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org 3.pool.ntp.org"
+\ No newline at end of file
+--
+Working Copy 3.2.9
+
