@@ -36,6 +36,7 @@
 ''' Module containing configuration required to build code generated
 for the Dynamo0p3 API '''
 
+from __future__ import absolute_import
 import os
 
 # constants
@@ -54,5 +55,10 @@ INFRASTRUCTURE_MODULES = ["constants_mod",
                           "stencil_dofmap_mod",
                           "function_space_mod",
                           "field_mod",
+                          "abstract_quadrature_mod",
+                          "quadrature_rule_mod",
+                          "quadrature_xyz_mod",
+                          "quadrature_xyoz_mod",
+                          "quadrature_xoyoz_mod",
                           "quadrature_mod",
                           "operator_mod"]

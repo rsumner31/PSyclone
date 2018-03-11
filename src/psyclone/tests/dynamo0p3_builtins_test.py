@@ -38,12 +38,8 @@
     using pytest. Currently all built-in operations are 'pointwise' in that
     they iterate over DOFs. However this may change in the future. '''
 
-# Since this is a file containing tests which often have to get in and
-# change the internal state of objects we disable pylint's warning
-# about such accesses
-# pylint: disable=protected-access
-
 # imports
+from __future__ import absolute_import
 import os
 import pytest
 from psyclone.parse import parse, ParseError
@@ -227,12 +223,12 @@ def test_builtin_operator_arg():
         _ = PSyFactory("dynamo0.3",
                        distributed_memory=False).create(invoke_info)
     assert ("In the Dynamo 0.3 API an argument to a built-in kernel "
-            "must be one of ['gh_field', 'gh_real'] but kernel " +
-            test_builtin_name.lower() + " has an argument of "
+            "must be one of ['gh_field', 'gh_real', 'gh_integer'] but " +
+            "kernel " + test_builtin_name.lower() + " has an argument of "
             "type gh_operator" in str(excinfo))
 
 
-def test_builtin_args_not_same_space():  # pylint: disable=invalid-name
+def test_builtin_args_not_same_space():
     ''' Check that we raise the correct error if we encounter a built-in
     that has arguments on different function spaces '''
     # Save the name of the actual builtin-definitions file
@@ -357,7 +353,7 @@ def test_dynbuiltfactory_str():
 # ------------- Adding (scaled) fields ------------------------------------- #
 
 
-def test_X_plus_Y():  # pylint: disable=invalid-name
+def test_X_plus_Y():
     ''' Test that 1) the str method of DynXPlusYKern returns the
     expected string and 2) we generate correct code for the built-in
     Z = X + Y where X and Y are fields '''
@@ -384,8 +380,7 @@ def test_X_plus_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -408,7 +403,7 @@ def test_X_plus_Y():  # pylint: disable=invalid-name
                 "f2_proxy%data(df)\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the "
+                "      ! Set halos dirty/clean for fields modified in the "
                 "above loop\n"
                 "      !\n"
                 "      CALL f3_proxy%set_dirty()\n"
@@ -417,7 +412,7 @@ def test_X_plus_Y():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_X_plus_Y():  # pylint: disable=invalid-name
+def test_inc_X_plus_Y():
     ''' Test that 1) the str method of DynIncXPlusYKern returns the
     expected string and 2) we generate correct code for the built-in
     X = X + Y where X and Y are fields '''
@@ -457,14 +452,14 @@ def test_inc_X_plus_Y():  # pylint: disable=invalid-name
                 "f2_proxy%data(df)\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the above "
-                "loop\n"
+                "      ! Set halos dirty/clean for fields modified in the "
+                "above loop\n"
                 "      !\n"
                 "      CALL f1_proxy%set_dirty()")
             assert output in code
 
 
-def test_aX_plus_Y():  # pylint: disable=invalid-name
+def test_aX_plus_Y():
     ''' Test that 1) the str method of DynAXPlusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = a*X + Y where 'a' is a scalar and Z, X and Y are fields '''
@@ -502,8 +497,7 @@ def test_aX_plus_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -537,7 +531,7 @@ def test_aX_plus_Y():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_aX_plus_Y():  # pylint: disable=invalid-name
+def test_inc_aX_plus_Y():
     ''' Test that 1) the str method of DynIncAXPlusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = a*X + Y where 'a' is a scalar and X and Y are fields '''
@@ -574,8 +568,7 @@ def test_inc_aX_plus_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -609,7 +602,7 @@ def test_inc_aX_plus_Y():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_X_plus_bY():  # pylint: disable=invalid-name
+def test_inc_X_plus_bY():
     ''' Test that 1) the str method of DynIncXPlusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X + b*Y where 'b' is a scalar and X and Y are fields '''
@@ -646,8 +639,7 @@ def test_inc_X_plus_bY():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -681,7 +673,7 @@ def test_inc_X_plus_bY():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_aX_plus_bY():  # pylint: disable=invalid-name
+def test_aX_plus_bY():
     ''' Test that 1) the str method of DynAXPlusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = a*X + b*Y where 'a' and 'b' are scalars and Z, X and
@@ -720,8 +712,7 @@ def test_aX_plus_bY():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -755,7 +746,7 @@ def test_aX_plus_bY():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_aX_plus_bY():  # pylint: disable=invalid-name
+def test_inc_aX_plus_bY():
     ''' Test that 1) the str method of DynIncAXPlusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = a*X + b*Y where 'a' and 'b' are scalars and X and Y
@@ -794,8 +785,7 @@ def test_inc_aX_plus_bY():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -832,7 +822,7 @@ def test_inc_aX_plus_bY():  # pylint: disable=invalid-name
 # ------------- Subtracting (scaled) fields --------------------------------- #
 
 
-def test_X_minus_Y():  # pylint: disable=invalid-name
+def test_X_minus_Y():
     ''' Test that 1) the str method of DynXMinusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = X - Y where Z, X and Y are fields '''
@@ -859,8 +849,7 @@ def test_X_minus_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -892,7 +881,7 @@ def test_X_minus_Y():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_X_minus_Y():  # pylint: disable=invalid-name
+def test_inc_X_minus_Y():
     ''' Test that 1) the str method of DynIncXMinusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X - Y where X and Y are fields '''
@@ -913,6 +902,15 @@ def test_inc_X_minus_Y():  # pylint: disable=invalid-name
         print code
         if not distmem:
             output = (
+                "      f1_proxy = f1%get_proxy()\n"
+                "      f2_proxy = f2%get_proxy()\n"
+                "      !\n"
+                "      ! Initialise number of layers\n"
+                "      !\n"
+                "      nlayers = f1_proxy%vspace%get_nlayers()\n"
+                "      !\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
+                "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
                 "      !\n"
@@ -940,7 +938,7 @@ def test_inc_X_minus_Y():  # pylint: disable=invalid-name
             assert output in code
 
 
-def test_aX_minus_Y():  # pylint: disable=invalid-name
+def test_aX_minus_Y():
     ''' Test that 1) the str method of DynAXMinusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = a*X - Y where 'a' is a scalar and Z, X and Y are fields '''
@@ -978,8 +976,7 @@ def test_aX_minus_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -1013,7 +1010,7 @@ def test_aX_minus_Y():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_X_minus_bY():  # pylint: disable=invalid-name
+def test_X_minus_bY():
     ''' Test that 1) the str method of DynXMinusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = X - b*Y where 'b' is a scalar and Z, X and Y are fields '''
@@ -1051,8 +1048,7 @@ def test_X_minus_bY():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -1086,7 +1082,7 @@ def test_X_minus_bY():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_X_minus_bY():  # pylint: disable=invalid-name
+def test_inc_X_minus_bY():
     ''' Test that 1) the str method of DynIncXMinusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X - b*Y where 'b' is a scalar and X and Y are fields '''
@@ -1123,8 +1119,7 @@ def test_inc_X_minus_bY():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1161,7 +1156,7 @@ def test_inc_X_minus_bY():  # pylint: disable=invalid-name
 # ------------- Multiplying (scaled) fields --------------------------------- #
 
 
-def test_X_times_Y():  # pylint: disable=invalid-name
+def test_X_times_Y():
     ''' Test that 1) the str method of DynXTimesYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = X*Y where Z, X and Y are fields '''
@@ -1182,6 +1177,26 @@ def test_X_times_Y():  # pylint: disable=invalid-name
         print code
         if not distmem:
             output = (
+                "    SUBROUTINE invoke_0(f3, f1, f2)\n"
+                "      TYPE(field_type), intent(inout) :: f3\n"
+                "      TYPE(field_type), intent(in) :: f1, f2\n"
+                "      INTEGER df\n"
+                "      INTEGER ndf_any_space_1_f3, undf_any_space_1_f3\n"
+                "      INTEGER nlayers\n"
+                "      TYPE(field_proxy_type) f3_proxy, f1_proxy, f2_proxy\n"
+                "      !\n"
+                "      ! Initialise field and/or operator proxies\n"
+                "      !\n"
+                "      f3_proxy = f3%get_proxy()\n"
+                "      f1_proxy = f1%get_proxy()\n"
+                "      f2_proxy = f2%get_proxy()\n"
+                "      !\n"
+                "      ! Initialise number of layers\n"
+                "      !\n"
+                "      nlayers = f3_proxy%vspace%get_nlayers()\n"
+                "      !\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
+                "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
                 "      !\n"
@@ -1209,7 +1224,7 @@ def test_X_times_Y():  # pylint: disable=invalid-name
             assert output in code
 
 
-def test_inc_X_times_Y():  # pylint: disable=invalid-name
+def test_inc_X_times_Y():
     ''' Test that 1) the str method of DynIncXTimesYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X*Y where X and Y are fields '''
@@ -1236,8 +1251,7 @@ def test_inc_X_times_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1269,7 +1283,7 @@ def test_inc_X_times_Y():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_aX_times_Y():  # pylint: disable=invalid-name
+def test_inc_aX_times_Y():
     ''' Test that 1) the str method of DynIncAXTimesYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = a*X*Y where 'a' is a scalar and X and Y are fields '''
@@ -1306,8 +1320,7 @@ def test_inc_aX_times_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1344,7 +1357,7 @@ def test_inc_aX_times_Y():  # pylint: disable=invalid-name
 # ------------- Scaling fields (multiplying by a scalar --------------------- #
 
 
-def test_a_times_X():  # pylint: disable=invalid-name
+def test_a_times_X():
     ''' Test that 1) the str method of DynATimesXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Y = a*X where 'a' is a scalar and X and Y are fields '''
@@ -1371,8 +1384,7 @@ def test_a_times_X():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f2_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f2\n"
+                "      ! Initialise number of DoFs for any_space_1_f2\n"
                 "      !\n"
                 "      ndf_any_space_1_f2 = f2_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f2 = f2_proxy%vspace%get_undf()\n"
@@ -1402,7 +1414,7 @@ def test_a_times_X():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_a_times_X():  # pylint: disable=invalid-name
+def test_inc_a_times_X():
     ''' Test that 1) the str method of DynIncATimesXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = a*X where 'a' is a scalar and X is a field '''
@@ -1423,6 +1435,27 @@ def test_inc_a_times_X():  # pylint: disable=invalid-name
         print code
         if not distmem:
             output = (
+                "    SUBROUTINE invoke_0(a, f1, b, f2, f3)\n"
+                "      REAL(KIND=r_def), intent(in) :: a, b\n"
+                "      TYPE(field_type), intent(inout) :: f3\n"
+                "      TYPE(field_type), intent(in) :: f1, f2\n"
+                "      INTEGER df\n"
+                "      INTEGER ndf_any_space_1_f1, undf_any_space_1_f1\n"
+                "      INTEGER nlayers\n"
+                "      TYPE(field_proxy_type) f1_proxy, f2_proxy, f3_proxy\n"
+                "      !\n"
+                "      ! Initialise field and/or operator proxies\n"
+                "      !\n"
+                "      f1_proxy = f1%get_proxy()\n"
+                "      f2_proxy = f2%get_proxy()\n"
+                "      f3_proxy = f3%get_proxy()\n"
+                "      !\n"
+                "      ! Initialise number of layers\n"
+                "      !\n"
+                "      nlayers = f1_proxy%vspace%get_nlayers()\n"
+                "      !\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
+                "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
                 "      !\n"
@@ -1452,7 +1485,7 @@ def test_inc_a_times_X():  # pylint: disable=invalid-name
 # ------------- Dividing (scaled) fields ------------------------------------ #
 
 
-def test_X_divideby_Y():  # pylint: disable=invalid-name
+def test_X_divideby_Y():
     ''' Test that 1) the str method of DynXDividebyYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = X/Y where Z, X and Y are fields '''
@@ -1479,8 +1512,7 @@ def test_X_divideby_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -1512,7 +1544,7 @@ def test_X_divideby_Y():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_inc_X_divideby_Y():  # pylint: disable=invalid-name
+def test_inc_X_divideby_Y():
     ''' Test that 1) the str method of DynIncXDividebyYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X/Y where X and Y are fields '''
@@ -1538,8 +1570,7 @@ def test_inc_X_divideby_Y():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1574,7 +1605,7 @@ def test_inc_X_divideby_Y():  # pylint: disable=invalid-name
 # ------------- Raising field to a scalar ----------------------------------- #
 
 
-def test_inc_X_powreal_a():  # pylint: disable=invalid-name
+def test_inc_X_powreal_a():
     ''' Test that 1) the str method of DynIncXPowrealAKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X**a where 'a' is a real scalar and X is a field '''
@@ -1621,10 +1652,63 @@ def test_inc_X_powreal_a():  # pylint: disable=invalid-name
             assert output in code
 
 
+def test_inc_X_powint_n(tmpdir, f90, f90flags):
+    ''' Test that 1) the str method of DynIncXPowintNKern returns the
+    expected string and 2) we generate correct code for the built-in
+    operation X = X**n where 'n' is an integer scalar and X is a field '''
+    for distmem in [False, True]:
+        _, invoke_info = parse(
+            os.path.join(BASE_PATH,
+                         "15.6.2_inc_X_powint_n_builtin.f90"),
+            distributed_memory=distmem,
+            api="dynamo0.3")
+        psy = PSyFactory("dynamo0.3",
+                         distributed_memory=distmem).create(invoke_info)
+        # Test string method
+        first_invoke = psy.invokes.invoke_list[0]
+        kern = first_invoke.schedule.children[0].children[0]
+        assert str(kern) == "Built-in: raise a field to an integer power"
+        # Test code generation
+        code = str(psy.gen)
+        print code
+
+        if utils.TEST_COMPILE:
+            # If compilation testing has been enabled
+            # (--compile --f90="<compiler_name>" flags to py.test)
+            assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
+
+        if not distmem:
+            output = (
+                "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
+                "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
+                "      !\n"
+                "      ! Call our kernels\n"
+                "      !\n"
+                "      DO df=1,undf_any_space_1_f1\n"
+                "        f1_proxy%data(df) = f1_proxy%data(df)**i_scalar\n"
+                "      END DO \n"
+                "      !\n")
+        else:
+            mesh_code_present("f1", code)
+            output = (
+                "      ! Call kernels and communication routines\n"
+                "      !\n"
+                "      DO df=1,f1_proxy%vspace%get_last_dof_owned()\n"
+                "        f1_proxy%data(df) = f1_proxy%data(df)**i_scalar\n"
+                "      END DO \n"
+                "      !\n"
+                "      ! Set halos dirty/clean for fields modified in the "
+                "above loop\n"
+                "      !\n"
+                "      CALL f1_proxy%set_dirty()")
+
+            assert output in code
+
+
 # ------------- Setting field elements to a value --------------------------- #
 
 
-def test_setval_c():  # pylint: disable=invalid-name
+def test_setval_c():
     ''' Test that 1) the str method of DynSetvalCKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = c where 'c' is a constant scalar value and X is a field '''
@@ -1659,8 +1743,7 @@ def test_setval_c():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1690,7 +1773,7 @@ def test_setval_c():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_setval_X():  # pylint: disable=invalid-name
+def test_setval_X():
     ''' Test that 1) the str method of DynSetvalXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Y = X where X and Y are fields '''
@@ -1726,8 +1809,7 @@ def test_setval_X():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f2_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f2\n"
+                "      ! Initialise number of DoFs for any_space_1_f2\n"
                 "      !\n"
                 "      ndf_any_space_1_f2 = f2_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f2 = f2_proxy%vspace%get_undf()\n"
@@ -1760,7 +1842,7 @@ def test_setval_X():  # pylint: disable=invalid-name
 # ------------- Inner product of fields ------------------------------------- #
 
 
-def test_X_innerproduct_Y():  # pylint: disable=invalid-name
+def test_X_innerproduct_Y():
     ''' Test that 1) the str method of DynXInnerproductYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation which calculates inner product of fields X and Y as
@@ -1794,8 +1876,7 @@ def test_X_innerproduct_Y():  # pylint: disable=invalid-name
         assert output in code
         if not distmem:
             output_seq = (
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1815,8 +1896,7 @@ def test_X_innerproduct_Y():  # pylint: disable=invalid-name
         else:
             mesh_code_present("f1", code)
             output_dm = (
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1840,7 +1920,7 @@ def test_X_innerproduct_Y():  # pylint: disable=invalid-name
             assert "      TYPE(scalar_type) global_sum\n" in code
 
 
-def test_X_innerproduct_X():  # pylint: disable=invalid-name
+def test_X_innerproduct_X():
     ''' Test that 1) the str method of DynXInnerproductXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation which calculates inner product of a field X by itself as
@@ -1873,8 +1953,7 @@ def test_X_innerproduct_X():  # pylint: disable=invalid-name
         assert output in code
         if not distmem:
             output_seq = (
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1894,8 +1973,7 @@ def test_X_innerproduct_X():  # pylint: disable=invalid-name
         else:
             mesh_code_present("f1", code)
             output_dm = (
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1922,7 +2000,7 @@ def test_X_innerproduct_X():  # pylint: disable=invalid-name
 # ------------- Sum field elements ------------------------------------------ #
 
 
-def test_sum_X():  # pylint: disable=invalid-name
+def test_sum_X():
     ''' Test that 1) the str method of DynSumXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation which sums elements of a field X as sumfld = sum(X(:)) '''
@@ -1971,8 +2049,7 @@ def test_sum_X():  # pylint: disable=invalid-name
         else:
             mesh_code_present("f1", code)
             output = (
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -1999,7 +2076,7 @@ def test_sum_X():  # pylint: disable=invalid-name
 @pytest.mark.xfail(
     reason="Requires kernel-argument dependency analysis to deduce the "
     "spaces of the fields passed to the built-in kernel")
-def test_X_times_Y_on_different_spaces():  # pylint: disable=invalid-name
+def test_X_times_Y_on_different_spaces():
     ''' Test that we raise an error if X_times_Y() is called for
     two fields that are on different spaces '''
     _, invoke_info = parse(
@@ -2015,7 +2092,7 @@ def test_X_times_Y_on_different_spaces():  # pylint: disable=invalid-name
 @pytest.mark.xfail(
     reason="Dependency analysis of kernel arguments within an invoke is "
     "not yet implemented")
-def test_X_times_Y_deduce_space():  # pylint: disable=invalid-name
+def test_X_times_Y_deduce_space():
     ''' Test that we generate correct code if X_times_Y() is called
     in an invoke containing another kernel that allows the space of the
     fields to be deduced '''
@@ -2052,6 +2129,8 @@ def test_builtin_set(tmpdir, f90, f90flags):
         print code
 
         if utils.TEST_COMPILE:
+            # If compilation testing has been enabled
+            # (--compile --f90="<compiler_name>" flags to py.test)
             assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
 
         if not distmem:
@@ -2071,8 +2150,7 @@ def test_builtin_set(tmpdir, f90, f90flags):
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -2097,7 +2175,7 @@ def test_builtin_set(tmpdir, f90, f90flags):
                 "        f1_proxy%data(df) = 0.0\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the "
+                "      ! Set halos dirty/clean for fields modified in the "
                 "above loop\n"
                 "      !\n"
                 "      CALL f1_proxy%set_dirty()\n"
@@ -2106,7 +2184,7 @@ def test_builtin_set(tmpdir, f90, f90flags):
             assert output_dm_2 in code
 
 
-def test_aX_plus_Y_by_value():  # pylint: disable=invalid-name
+def test_aX_plus_Y_by_value():
     ''' Test that we generate correct code for the builtin
     operation Z = a*X + Y when a scalar is passed by value'''
     _, invoke_info = parse(
@@ -2138,8 +2216,7 @@ def test_aX_plus_Y_by_value():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -2164,7 +2241,7 @@ def test_aX_plus_Y_by_value():  # pylint: disable=invalid-name
                 "f2_proxy%data(df)\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the "
+                "      ! Set halos dirty/clean for fields modified in the "
                 "above loop\n"
                 "      !\n"
                 "      CALL f3_proxy%set_dirty()\n"
@@ -2173,7 +2250,7 @@ def test_aX_plus_Y_by_value():  # pylint: disable=invalid-name
             assert output_dm_2 in code
 
 
-def test_aX_plus_bY_by_value():  # pylint: disable=invalid-name
+def test_aX_plus_bY_by_value():
     ''' Test that we generate correct code for the builtin
     operation Z = a*X + b*Y when scalars 'a' and 'b' are passed by value'''
     _, invoke_info = parse(
@@ -2205,8 +2282,7 @@ def test_aX_plus_bY_by_value():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f3_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -2231,7 +2307,7 @@ def test_aX_plus_bY_by_value():  # pylint: disable=invalid-name
                 "0.8*f2_proxy%data(df)\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the "
+                "      ! Set halos dirty/clean for fields modified in the "
                 "above loop\n"
                 "      !\n"
                 "      CALL f3_proxy%set_dirty()\n"
@@ -2276,20 +2352,17 @@ def test_multiple_builtin_set():
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f2\n"
+                "      ! Initialise number of DoFs for any_space_1_f2\n"
                 "      !\n"
                 "      ndf_any_space_1_f2 = f2_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f2 = f2_proxy%vspace%get_undf()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f3\n"
+                "      ! Initialise number of DoFs for any_space_1_f3\n"
                 "      !\n"
                 "      ndf_any_space_1_f3 = f3_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f3 = f3_proxy%vspace%get_undf()\n"
@@ -2315,8 +2388,8 @@ def test_multiple_builtin_set():
                 "        f1_proxy%data(df) = fred\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the above "
-                "loop\n"
+                "      ! Set halos dirty/clean for fields modified in the "
+                "above loop\n"
                 "      !\n"
                 "      CALL f1_proxy%set_dirty()\n"
                 "      !\n"
@@ -2324,8 +2397,8 @@ def test_multiple_builtin_set():
                 "        f2_proxy%data(df) = 3.0\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the above "
-                "loop\n"
+                "      ! Set halos dirty/clean for fields modified in the "
+                "above loop\n"
                 "      !\n"
                 "      CALL f2_proxy%set_dirty()\n"
                 "      !\n"
@@ -2333,8 +2406,8 @@ def test_multiple_builtin_set():
                 "        f3_proxy%data(df) = ginger\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the above "
-                "loop\n"
+                "      ! Set halos dirty/clean for fields modified in the "
+                "above loop\n"
                 "      !\n"
                 "      CALL f3_proxy%set_dirty()\n"
                 "      !\n")
@@ -2367,14 +2440,12 @@ def test_builtin_set_plus_normal():
 
         if not distmem:
             output = (
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for w3\n"
+                "      ! Initialise number of DoFs for w3\n"
                 "      !\n"
                 "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
                 "      undf_w3 = m2_proxy%vspace%get_undf()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays for "
-                "any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = f1_proxy%vspace%get_undf()\n"
@@ -2418,8 +2489,8 @@ def test_builtin_set_plus_normal():
                 "ndf_w3, undf_w3, map_w3(:,cell))\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the above "
-                "loop\n"
+                "      ! Set halos dirty/clean for fields modified in the "
+                "above loop\n"
                 "      !\n"
                 "      CALL f1_proxy%set_dirty()\n"
                 "      !\n"
@@ -2427,8 +2498,8 @@ def test_builtin_set_plus_normal():
                 "        f1_proxy%data(df) = 0.0\n"
                 "      END DO \n"
                 "      !\n"
-                "      ! Set halos dirty for fields modified in the above "
-                "loop\n"
+                "      ! Set halos dirty/clean for fields modified in the "
+                "above loop\n"
                 "      !\n"
                 "      CALL f1_proxy%set_dirty()\n"
                 "      !\n")
@@ -2439,7 +2510,7 @@ def test_builtin_set_plus_normal():
 # ------------- Builtins with reductions ------------------------------------ #
 
 
-def test_multi_builtin_single_invoke():  # pylint: disable=invalid-name
+def test_multi_builtin_single_invoke():
     '''Test that multiple builtins, including one with reductions,
     produce correct code'''
     for distmem in [False, True]:
@@ -2479,8 +2550,7 @@ def test_multi_builtin_single_invoke():  # pylint: disable=invalid-name
                 "      !\n"
                 "      mesh => f1%get_mesh()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = "
@@ -2529,8 +2599,7 @@ def test_multi_builtin_single_invoke():  # pylint: disable=invalid-name
                 "      !\n"
                 "      nlayers = f1_proxy%vspace%get_nlayers()\n"
                 "      !\n"
-                "      ! Initialise sizes and allocate any basis arrays "
-                "for any_space_1_f1\n"
+                "      ! Initialise number of DoFs for any_space_1_f1\n"
                 "      !\n"
                 "      ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()\n"
                 "      undf_any_space_1_f1 = "
@@ -2559,18 +2628,14 @@ def test_scalar_int_builtin_error(monkeypatch):
     monkeypatch.setattr(dynamo0p3_builtins, "BUILTIN_DEFINITIONS_FILE",
                         value=os.path.join(BASE_PATH,
                                            "int_reduction_builtins_mod.f90"))
-    # Define the built-in name and test file
-    test_builtin_name = "X_innerproduct_Y"
-    for dist_mem in [True, False]:
-        _, invoke_info = parse(
-            os.path.join(BASE_PATH, "16.2_integer_scalar_sum.f90"),
-            api="dynamo0.3", distributed_memory=dist_mem)
+    for dist_mem in [False, True]:
         with pytest.raises(ParseError) as excinfo:
-            _ = PSyFactory("dynamo0.3",
-                           distributed_memory=dist_mem).create(invoke_info)
-        assert ("an argument to a built-in kernel must be one of ['gh_field', "
-                "'gh_real'] but kernel " + test_builtin_name.lower() + " has "
-                "an argument of type gh_integer" in str(excinfo))
+            _, _ = parse(os.path.join(BASE_PATH,
+                                      "16.2_integer_scalar_sum.f90"),
+                         api="dynamo0.3", distributed_memory=dist_mem)
+        assert ("In the dynamo0.3 API a reduction access 'gh_sum' is "
+                "only valid with a real scalar argument, but 'gh_integer' "
+                "was found" in str(excinfo))
 
 
 # ------------- Auxiliary mesh code generation function --------------------- #

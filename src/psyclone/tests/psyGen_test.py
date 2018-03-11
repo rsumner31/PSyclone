@@ -37,10 +37,6 @@
 
 ''' Performs py.test tests on the psygen module '''
 
-# Since this is a file containing tests which often have to get in and
-# change the internal state of objects we disable pylint's warning
-# about such accesses
-# pylint: disable=protected-access
 
 # internal classes requiring tests
 # PSy,Invokes,Dependencies,NameSpaceFactory,NameSpace,Invoke,Node,Schedule,
@@ -49,15 +45,18 @@
 
 # user classes requiring tests
 # PSyFactory, TransInfo, Transformation
+from __future__ import absolute_import
 import os
+import re
 import pytest
 from fparser import api as fpapi
 from psyclone.psyGen import TransInfo, Transformation, PSyFactory, NameSpace, \
     NameSpaceFactory, OMPParallelDoDirective, PSy, \
     OMPParallelDirective, OMPDoDirective, OMPDirective, Directive
-from psyclone.psyGen import GenerationError, FieldNotFoundError, HaloExchange
-from psyclone.dynamo0p3 import DynKern, DynKernMetadata
-from psyclone.parse import parse
+from psyclone.psyGen import GenerationError, FieldNotFoundError, \
+     HaloExchange, Invoke
+from psyclone.dynamo0p3 import DynKern, DynKernMetadata, DynSchedule
+from psyclone.parse import parse, InvokeCall
 from psyclone.transformations import OMPParallelLoopTrans, DynamoLoopFuseTrans
 from psyclone.generator import generate
 
@@ -74,7 +73,7 @@ def test_invalid_api():
         _ = PSyFactory(api="invalid")
 
 
-def test_psyfactory_valid_return_object():  # pylint: disable=invalid-name
+def test_psyfactory_valid_return_object():
     '''test that psyfactory returns a psyfactory object for all supported
     inputs'''
     psy_factory = PSyFactory()
@@ -129,7 +128,7 @@ def test_base_class_not_callable():
     '''make sure we can not instantiate abstract Transformation class
     directly'''
     with pytest.raises(TypeError):
-        _ = Transformation()
+        _ = Transformation()  # pylint: disable=abstract-class-instantiated
 
 
 # TransInfo class unit tests
@@ -193,7 +192,7 @@ def test_invalid_high_number():
         _ = trans.get_trans_num(999)
 
 
-def test_valid_return_object_from_number():  # pylint: disable=invalid-name
+def test_valid_return_object_from_number():
     ''' check get_trans_num method returns expected type of instance '''
     trans = TransInfo()
     transform = trans.get_trans_num(1)
@@ -208,7 +207,7 @@ def test_invalid_name():
         _ = trans.get_trans_name("invalid")
 
 
-def test_valid_return_object_from_name():  # pylint: disable=invalid-name
+def test_valid_return_object_from_name():
     ''' check get_trans_name method return the correct object type '''
     trans = TransInfo()
     transform = trans.get_trans_name("LoopFuse")
@@ -304,7 +303,7 @@ def test_existing_labels():
     assert name4 == name2
 
 
-def test_existing_labels_case_sensitive():  # pylint: disable=invalid-name
+def test_existing_labels_case_sensitive():
     '''tests that existing labels and contexts return the previous name'''
     namespace = NameSpace(case_sensitive=True)
     name = "Rupert"
@@ -336,7 +335,7 @@ def test_reserved_names():
     assert name1 == nameb.lower()+"_1"
 
 
-def test_reserved_names_case_sensitive():  # pylint: disable=invalid-name
+def test_reserved_names_case_sensitive():
     '''tests that reserved names are not returned by the case sensitive
     name space manager'''
     namea = "PSyclone"
@@ -366,7 +365,7 @@ def test_reserved_name_exists():
         namespace.add_reserved_name(name.lower())
 
 
-def test_reserved_name_exists_case_sensitive():  # pylint: disable=invalid-name
+def test_reserved_name_exists_case_sensitive():
     '''tests that an error is generated if a reserved name has already
     been used as a name'''
     name = "PSyclone"
@@ -401,7 +400,7 @@ def test_internal_name_clashes():
     assert name3 == name2+"_1"
 
 
-def test_intern_name_clash_case_sensitive():  # pylint: disable=invalid-name
+def test_intern_name_clash_case_sensitive():
     '''tests that names that are generated internally by the case
     sensitive namespace manager can be used as root names'''
     anon_name = "Anon"
@@ -442,6 +441,34 @@ def test_reset():
     assert ns1 != ns2
 
 # tests for class Call
+
+
+def test_invokes_can_always_be_printed():
+    '''Test that an Invoke instance can always be printed (i.e. is
+    initialised fully)'''
+    inv = Invoke(None, None, None)
+    assert inv.__str__() == "invoke()"
+
+    invoke_call = InvokeCall([], "TestName")
+    inv = Invoke(invoke_call, 12, DynSchedule)
+    # Name is converted to lower case if set in constructor of InvokeCall:
+    assert inv.__str__() == "invoke_testname()"
+
+    invoke_call._name = None
+    inv = Invoke(invoke_call, 12, DynSchedule)
+    assert inv.__str__() == "invoke_12()"
+
+    # Last test case: one kernel call - to avoid constructing
+    # the InvokeCall, parse an existing Fortran file"
+
+    _, invoke = parse(
+        os.path.join(BASE_PATH, "1.12_single_invoke_deref_name_clash.f90"),
+        api="dynamo0.3")
+
+    alg_invocation = invoke.calls.values()[0]
+    inv = Invoke(alg_invocation, 0, DynSchedule)
+    assert inv.__str__() == \
+        "invoke_0_testkern_type(a, f1_my_field, f1%my_field, m1, m2)"
 
 
 def test_same_name_invalid():
@@ -559,13 +586,13 @@ def test_call_local_vars():
     from psyclone.psyGen import Call, Arguments
     my_arguments = Arguments(None)
 
-    class KernType(object):
+    class KernType(object):  # pylint: disable=too-few-public-methods
         ''' temporary dummy class '''
         def __init__(self):
             self.iterates_over = "stuff"
     my_ktype = KernType()
 
-    class DummyClass(object):
+    class DummyClass(object):  # pylint: disable=too-few-public-methods
         ''' temporary dummy class '''
         def __init__(self, ktype):
             self.module_name = "dummy_module"
@@ -624,8 +651,7 @@ def test_ompdo_directive_class_view(capsys):
 
             psy = PSyFactory("dynamo0.3", distributed_memory=dist_mem).\
                 create(invoke_info)
-            invoke = psy.invokes.invoke_list[0]
-            schedule = invoke.schedule
+            schedule = psy.invokes.invoke_list[0].schedule
             otrans = OMPParallelLoopTrans()
 
             if dist_mem:
@@ -679,11 +705,11 @@ def test_call_abstract_methods():
     assert "Call.gen_code should be implemented" in str(excinfo.value)
 
 
-def test_haloexchange_unknown_halo_depth():  # pylint: disable=invalid-name
+def test_haloexchange_unknown_halo_depth():
     '''test the case when the halo exchange base class is called without
     a halo depth'''
-    halo_exchange = HaloExchange(None, None, None, None, None)
-    assert halo_exchange._halo_depth == "unknown"
+    halo_exchange = HaloExchange(None)
+    assert halo_exchange._halo_depth is None
 
 
 def test_globalsum_view(capsys):
@@ -1083,7 +1109,7 @@ def test_argument_forward_read_dependencies():
     schedule = invoke.schedule
     # 1: returns [] if not a writer. f1 is read, not written.
     f1_first_read = schedule.children[0].children[0].arguments.args[2]
-    call_nodes = schedule.calls()
+    _ = schedule.calls()
     assert f1_first_read.forward_read_dependencies() == []
     # 2: return list of readers (f3 is written to and then read by
     # three following calls)
@@ -1099,7 +1125,7 @@ def test_argument_forward_read_dependencies():
     assert f2_write.forward_read_dependencies() == []
 
 
-def test_argument_forward_dependence():  # pylint: disable=invalid-name
+def test_argument_forward_dependence():
     '''Check that forward_dependence method returns the first dependent
     argument after the current Node in the schedule or None if none
     are found.'''
@@ -1156,7 +1182,7 @@ def test_argument_forward_dependence():  # pylint: disable=invalid-name
     assert result == next_arg
 
 
-def test_argument_backward_dependence():  # pylint: disable=invalid-name
+def test_argument_backward_dependence():
     '''Check that backward_dependence method returns the first dependent
     argument before the current Node in the schedule or None if none
     are found.'''
@@ -1538,7 +1564,7 @@ def test_omp_forward_dependence():
     assert global_sum_loop.forward_dependence() == next_omp
 
 
-def test_directive_backward_dependence():  # pylint: disable=invalid-name
+def test_directive_backward_dependence():
     '''Test that the backward_dependence method works for Directives,
     returning the closest dependent Node before the current Node in
     the schedule or None if none are found.'''
@@ -1753,7 +1779,9 @@ def test_node_dag_no_graphviz(tmpdir):
     import sys
     keep = None
     try:
+        # pylint: disable=unused-variable
         import graphviz
+        # pylint: enable=unused-variable
         keep = sys.modules['graphviz']
         sys.modules['graphviz'] = None
     except ImportError:
@@ -1771,32 +1799,41 @@ def test_node_dag_no_graphviz(tmpdir):
     if keep:
         sys.modules['graphviz'] = keep
 
-EXPECTED2 = (
-    "digraph {\n"
-    "	schedule_start\n"
-    "	schedule_end\n"
-    "	loop_0_start\n"
-    "	loop_0_end\n"
-    "		loop_0_end -> loop_1_start [color=green]\n"
-    "		schedule_start -> loop_0_start [color=blue]\n"
-    "	kernel_testkern_qr_code_2\n"
-    "		kernel_testkern_qr_code_2 -> loop_0_end [color=blue]\n"
-    "		loop_0_start -> kernel_testkern_qr_code_2 [color=blue]\n"
-    "	loop_1_start\n"
-    "	loop_1_end\n"
-    "		loop_1_end -> schedule_end [color=blue]\n"
-    "		loop_0_end -> loop_1_start [color=red]\n"
-    "	kernel_testkern_qr_code_4\n"
-    "		kernel_testkern_qr_code_4 -> loop_1_end [color=blue]\n"
-    "		loop_1_start -> kernel_testkern_qr_code_4 [color=blue]\n"
+# Use a regex to allow for whitespace differences between graphviz
+# versions. Need a raw-string (r"") to get new-lines handled nicely.
+# pylint fails to spot the 'r' at the beginning of the string (presumably
+# because it is split over several lines) so disable the (many)
+# warnings about anomalous backslashes.
+# pylint: disable=anomalous-backslash-in-string
+EXPECTED2 = re.compile(
+    r"digraph {\n"
+    "\s*schedule_start\n"
+    "\s*schedule_end\n"
+    "\s*loop_0_start\n"
+    "\s*loop_0_end\n"
+    "\s*loop_0_end -> loop_1_start \[color=green\]\n"
+    "\s*schedule_start -> loop_0_start \[color=blue\]\n"
+    "\s*kernel_testkern_qr_code_2\n"
+    "\s*kernel_testkern_qr_code_2 -> loop_0_end \[color=blue\]\n"
+    "\s*loop_0_start -> kernel_testkern_qr_code_2 \[color=blue\]\n"
+    "\s*loop_1_start\n"
+    "\s*loop_1_end\n"
+    "\s*loop_1_end -> schedule_end \[color=blue\]\n"
+    "\s*loop_0_end -> loop_1_start \[color=red\]\n"
+    "\s*kernel_testkern_qr_code_4\n"
+    "\s*kernel_testkern_qr_code_4 -> loop_1_end \[color=blue\]\n"
+    "\s*loop_1_start -> kernel_testkern_qr_code_4 \[color=blue\]\n"
     "}")
+# pylint: enable=anomalous-backslash-in-string
 
 
 def test_node_dag(tmpdir):
     '''test that dag generation works correctly. Skip the test if
     graphviz is not installed'''
     try:
+        # pylint: disable=unused-variable
         import graphviz
+        # pylint: enable=unused-variable
     except ImportError:
         return
     _, invoke_info = parse(
@@ -1809,9 +1846,8 @@ def test_node_dag(tmpdir):
     my_file = tmpdir.join('test')
     schedule.dag(file_name=my_file.strpath)
     result = my_file.read()
-    print EXPECTED2
     print result
-    assert EXPECTED2 in result
+    assert EXPECTED2.match(result)
     my_file = tmpdir.join('test.svg')
     result = my_file.read()
     for name in ["<title>schedule_start</title>",
@@ -1820,29 +1856,35 @@ def test_node_dag(tmpdir):
                  "<title>loop_0_end</title>",
                  "<title>kernel_testkern_qr_code_2</title>",
                  "<title>kernel_testkern_qr_code_4</title>",
-                 "<svg", "</svg>", "blue", "green", "red"]:
+                 "<svg", "</svg>", ]:
         assert name in result
+    for colour_name, colour_code in [("blue", "#0000ff"),
+                                     ("green", "#00ff00"),
+                                     ("red", "#ff0000")]:
+        assert colour_name in result or colour_code in result
+
     with pytest.raises(GenerationError) as excinfo:
         schedule.dag(file_name=my_file.strpath, file_format="rubbish")
     assert "unsupported graphviz file format" in str(excinfo.value)
 
 
-def test_haloexchange_halo_depth_get_set():  # pylint: disable=invalid-name
+def test_haloexchange_halo_depth_get_set():
     '''test that the halo_exchange getter and setter work correctly '''
     halo_depth = 4
-    halo_depth_2 = 5
-    halo_exchange = HaloExchange(None, None, halo_depth, None, None)
+    halo_exchange = HaloExchange(None)
     # getter
-    assert halo_exchange.halo_depth == 4
+    assert halo_exchange.halo_depth is None
     # setter
-    halo_exchange.halo_depth = halo_depth_2
-    assert halo_exchange.halo_depth == halo_depth_2
+    halo_exchange.halo_depth = halo_depth
+    assert halo_exchange.halo_depth == halo_depth
 
 
-def test_haloexchange_vector_index_dependence():
-    '''check that _find_read_arguments does not return a haloexchange as
-    a read dependence if the source node is a halo exchange and its field
-    is a vector and the other halo exchange accesses a different vector
+def test_haloexchange_vector_index_depend():
+    '''check that _find_read_arguments does not return a haloexchange as a
+    read dependence if the source node is a halo exchange and its
+    field is a vector and the other halo exchange accesses a different
+    element of the vector
+
     '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
                                         "4.9_named_multikernel_invokes.f90"),
@@ -1861,10 +1903,12 @@ def test_haloexchange_vector_index_dependence():
 
 
 def test_find_write_arguments_for_write():
-    '''when _find_write_arguments is called from an field argument that
-    does not read then we hould return an empty list. This test checks
-    this functionality. We use the dynamo0p3 api to create the
-    required objects'''
+    '''when backward_write_dependencies is called from an field argument
+    that does not read then we should return an empty list. This test
+    checks this functionality. We use the dynamo0p3 api to create the
+    required objects
+
+    '''
     _, invoke_info = parse(
         os.path.join(BASE_PATH, "1_single_invoke.f90"),
         distributed_memory=True, api="dynamo0.3")
@@ -1879,11 +1923,14 @@ def test_find_write_arguments_for_write():
     assert node_list == []
 
 
-def test_find_write_arguments_halo_to_halo_no_vector(monkeypatch):
-    '''when _find_write_arguments is called and a dependence is found
-    between two halo exchanges, then the field must be a vector field. If
-    the field is not a vector then an exception is raised. This test
-    checks that the exception is raised correctly.'''
+def test_find_w_args_hes_no_vec(monkeypatch):
+    '''when backward_write_dependencies, or forward_read_dependencies, are
+    called and a dependence is found between two halo exchanges, then
+    the field must be a vector field. If the field is not a vector
+    then an exception is raised. This test checks that the exception
+    is raised correctly.
+
+    '''
     _, invoke_info = parse(
         os.path.join(BASE_PATH, "4.9_named_multikernel_invokes.f90"),
         distributed_memory=True, api="dynamo0.3")
@@ -1893,21 +1940,48 @@ def test_find_write_arguments_halo_to_halo_no_vector(monkeypatch):
     schedule = invoke.schedule
     halo_exchange_d_v3 = schedule.children[5]
     field_d_v3 = halo_exchange_d_v3.field
-    halo_exchange_d_v2 = schedule.children[4]
-    field_d_v2 = halo_exchange_d_v2.field
     monkeypatch.setattr(field_d_v3, "_vector_size", 1)
     with pytest.raises(GenerationError) as excinfo:
-        node_list = field_d_v3.backward_write_dependencies()
-    assert ("Internal error, a halo exchange depends on another halo exchange "
+        _ = field_d_v3.backward_write_dependencies()
+    assert ("Internal error, HaloExchange.check_vector_halos_differ() a "
+            "halo exchange depends on another halo exchange "
             "but the vector size of field 'd' is 1" in str(excinfo.value))
 
 
-def test_find_write_arguments_halo_to_halo_vector_index(monkeypatch):
-    '''when _find_write_arguments is called and a dependence is found
-    between two halo exchanges, then the vector indices of the two
-    halo exchanges must be different. If the vector indices have the
-    same value then an exception is raised. This test checks that the
-    exception is raised correctly.'''
+def test_find_w_args_hes_diff_vec(monkeypatch):
+    '''when backward_write_dependencies, or forward_read_dependencies, are
+    called and a dependence is found between two halo exchanges, then
+    the associated fields must be equal size vectors . If the fields
+    are not vectors of equal size then an exception is raised. This
+    test checks that the exception is raised correctly.
+
+    '''
+    _, invoke_info = parse(
+        os.path.join(BASE_PATH, "4.9_named_multikernel_invokes.f90"),
+        distributed_memory=True, api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3",
+                     distributed_memory=True).create(invoke_info)
+    invoke = psy.invokes.invoke_list[0]
+    schedule = invoke.schedule
+    halo_exchange_d_v3 = schedule.children[5]
+    field_d_v3 = halo_exchange_d_v3.field
+    monkeypatch.setattr(field_d_v3, "_vector_size", 2)
+    with pytest.raises(GenerationError) as excinfo:
+        _ = field_d_v3.backward_write_dependencies()
+    assert (
+        "Internal error, HaloExchange.check_vector_halos_differ() a halo "
+        "exchange depends on another halo exchange but the vector sizes for "
+        "field 'd' differ" in str(excinfo.value))
+
+
+def test_find_w_args_hes_vec_idx(monkeypatch):
+    '''when backward_write_dependencies, or forward_read_dependencies are
+    called, and a dependence is found between two halo exchanges, then
+    the vector indices of the two halo exchanges must be different. If
+    the vector indices have the same value then an exception is
+    raised. This test checks that the exception is raised correctly.
+
+    '''
     _, invoke_info = parse(
         os.path.join(BASE_PATH, "4.9_named_multikernel_invokes.f90"),
         distributed_memory=True, api="dynamo0.3")
@@ -1918,20 +1992,22 @@ def test_find_write_arguments_halo_to_halo_vector_index(monkeypatch):
     halo_exchange_d_v3 = schedule.children[5]
     field_d_v3 = halo_exchange_d_v3.field
     halo_exchange_d_v2 = schedule.children[4]
-    field_d_v2 = halo_exchange_d_v2.field
     monkeypatch.setattr(halo_exchange_d_v2, "_vector_index", 3)
     with pytest.raises(GenerationError) as excinfo:
-        node_list = field_d_v3.backward_write_dependencies()
-    assert ("Internal error, a halo exchange depends on another halo "
-            "exchange and the vector id's of field 'd' are the "
+        _ = field_d_v3.backward_write_dependencies()
+    assert ("Internal error, HaloExchange.check_vector_halos_differ() "
+            "a halo exchange depends on another halo "
+            "exchange but both vector id's ('3') of field 'd' are the "
             "same" in str(excinfo.value))
 
 
-def test_find_write_arguments_halo_to_halo_vector_no_dependence(monkeypatch):
-    '''when _find_write_arguments is called halo exchanges with the same
-    field but a different index should not depend on each other. This test
-    checks that this behaviour is working correctly'''
-    
+def test_find_w_args_hes_vec_no_dep():
+    '''when _find_write_arguments, or _find_read_arguments, are called,
+    halo exchanges with the same field but a different index should
+    not depend on each other. This test checks that this behaviour is
+    working correctly
+    '''
+
     _, invoke_info = parse(
         os.path.join(BASE_PATH, "4.9_named_multikernel_invokes.f90"),
         distributed_memory=True, api="dynamo0.3")
@@ -1945,3 +2021,139 @@ def test_find_write_arguments_halo_to_halo_vector_no_dependence(monkeypatch):
     # as dependencies
     node_list = field_d_v3.backward_write_dependencies()
     assert node_list == []
+
+
+def test_check_vect_hes_differ_wrong_argtype():
+    '''when the check_vector_halos_differ method is called from a halo
+    exchange object the argument being passed should be a halo
+    exchange. If this is not the case an exception should be
+    raised. This test checks that this exception is working correctly.
+    '''
+
+    _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
+                           distributed_memory=True, api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3",
+                     distributed_memory=True).create(invoke_info)
+    invoke = psy.invokes.invoke_list[0]
+    schedule = invoke.schedule
+    halo_exchange = schedule.children[0]
+    with pytest.raises(GenerationError) as excinfo:
+        # pass an incorrect object to the method
+        halo_exchange.check_vector_halos_differ(psy)
+    assert (
+        "the argument passed to HaloExchange.check_vector_halos_differ() "
+        "is not a halo exchange object" in str(excinfo.value))
+
+
+def test_check_vec_hes_differ_diff_names():
+    '''when the check_vector_halos_differ method is called from a halo
+    exchange object the argument being passed should be a halo
+    exchange with an argument having the same name as the local halo
+    exchange argument name. If this is not the case an exception
+    should be raised. This test checks that this exception is working
+    correctly.
+    '''
+
+    _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
+                           distributed_memory=True, api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3",
+                     distributed_memory=True).create(invoke_info)
+    invoke = psy.invokes.invoke_list[0]
+    schedule = invoke.schedule
+    halo_exchange = schedule.children[0]
+    # obtain another halo exchange object which has an argument with a
+    # different name
+    different_halo_exchange = schedule.children[1]
+    with pytest.raises(GenerationError) as excinfo:
+        # pass halo exchange with different name to the method
+        halo_exchange.check_vector_halos_differ(different_halo_exchange)
+    assert (
+        "the halo exchange object passed to "
+        "HaloExchange.check_vector_halos_differ() has a "
+        "different field name 'm1' to self 'f2'" in str(excinfo.value))
+
+
+def test_find_w_args_multiple_deps_error():
+    '''when _find_write_arguments finds a write that causes it to return
+    there should not be any previous dependencies. This test checks
+    that an error is raised if this is not the case.
+    '''
+
+    _, invoke_info = parse(
+        os.path.join(BASE_PATH, "8.3_multikernel_invokes_vector.f90"),
+        distributed_memory=True, api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3",
+                     distributed_memory=True).create(invoke_info)
+    invoke = psy.invokes.invoke_list[0]
+    schedule = invoke.schedule
+    del schedule.children[4]
+    loop = schedule.children[6]
+    kernel = loop.children[0]
+    d_field = kernel.arguments.args[0]
+    with pytest.raises(GenerationError) as excinfo:
+        d_field.backward_write_dependencies()
+    assert (
+        "found a writer dependence but there are already dependencies"
+        in str(excinfo.value))
+
+
+def test_find_write_arguments_no_more_nodes():
+    '''when _find_write_arguments has looked through all nodes but has not
+    returned it should mean that is has not found any write
+    dependencies. This test checks that an error is raised if this is
+    not the case.
+    '''
+
+    _, invoke_info = parse(
+        os.path.join(BASE_PATH, "4.9_named_multikernel_invokes.f90"),
+        distributed_memory=True, api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3",
+                     distributed_memory=True).create(invoke_info)
+    invoke = psy.invokes.invoke_list[0]
+    schedule = invoke.schedule
+    del schedule.children[3]
+    loop = schedule.children[5]
+    kernel = loop.children[0]
+    d_field = kernel.arguments.args[5]
+    with pytest.raises(GenerationError) as excinfo:
+        d_field.backward_write_dependencies()
+    assert (
+        "no more nodes but there are already dependencies"
+        in str(excinfo.value))
+
+
+def test_find_w_args_multiple_deps():
+    '''_find_write_arguments should return as many halo exchange
+    dependencies as the vector size of the associated field. This test
+    checks that this is the case and that the returned objects are
+    what is expected.
+    '''
+
+    _, invoke_info = parse(
+        os.path.join(BASE_PATH, "8.3_multikernel_invokes_vector.f90"),
+        distributed_memory=True, api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3",
+                     distributed_memory=True).create(invoke_info)
+    invoke = psy.invokes.invoke_list[0]
+    schedule = invoke.schedule
+    loop = schedule.children[7]
+    kernel = loop.children[0]
+    d_field = kernel.arguments.args[0]
+    vector_size = d_field.vector_size
+    result_list = d_field.backward_write_dependencies()
+    # we have as many dependencies as the field vector size
+    assert vector_size == len(result_list)
+    indices = set()
+    for result in result_list:
+        # each dependence is a halo exchange nodes
+        assert isinstance(result.call, HaloExchange)
+        # the name of the halo exchange field and the initial
+        # field are the same
+        assert result.name == d_field.name
+        # the size of the halo exchange field vector and the initial
+        # field vector are the same
+        assert result.vector_size == vector_size
+        indices.add(result.call.vector_index)
+    # each of the indices are unique (otherwise the set would be
+    # smaller)
+    assert len(indices) == vector_size

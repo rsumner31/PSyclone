@@ -2,10 +2,6 @@
 # BSD 3-Clause License
 #
 # Copyright (c) 2017, Science and Technology Facilities Council
-# (c) The copyright relating to this work is owned jointly by the Crown,
-# Met Office and NERC 2016.
-# However, it has been created with the help of the GungHo Consortium,
-# whose members are identified at https://puma.nerc.ac.uk/trac/GungHo/wiki
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -17,7 +13,7 @@
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-
+#
 # * Neither the name of the copyright holder nor the names of its
 #   contributors may be used to endorse or promote products derived from
 #   this software without specific prior written permission.
@@ -35,7 +31,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Authors R. Ford and A. R. Porter, STFC Daresbury Lab
+# Authors R. W. Ford and A. R. Porter, STFC Daresbury Lab
 
 ''' This module provides the various transformations that can
     be applied to the schedule associated with an invoke(). There
@@ -44,7 +40,7 @@
     checks before calling the base class for the actual
     transformation. '''
 
-from psyGen import Transformation
+from psyclone.psyGen import Transformation
 
 VALID_OMP_SCHEDULES = ["runtime", "static", "dynamic", "guided", "auto"]
 
@@ -65,14 +61,14 @@ class LoopFuseTrans(Transformation):
     ''' Provides a loop-fuse transformation.
         For example:
 
-        >>> from parse import parse
-        >>> from psyGen import PSyFactory
+        >>> from psyclone.parse import parse
+        >>> from psyclone.psyGen import PSyFactory
         >>> ast,invokeInfo=parse("dynamo.F90")
         >>> psy=PSyFactory("dynamo0.1").create(invokeInfo)
         >>> schedule=psy.invokes.get('invoke_v3_kernel_type').schedule
         >>> schedule.view()
         >>>
-        >>> from transformations import LoopFuseTrans
+        >>> from psyclone.transformations import LoopFuseTrans
         >>> trans=LoopFuseTrans()
         >>> new_schedule,memento=trans.apply(schedule.children[0],
                                              schedule.children[1])
@@ -88,9 +84,25 @@ class LoopFuseTrans(Transformation):
         return "LoopFuse"
 
     def _validate(self, node1, node2):
-        ''' validity checks for input arguments '''
+        '''Perform various checks to ensure that it is valid to apply the
+        LoopFuseTrans transformation to the supplied nodes
+
+        :param node1: the first node we are checking
+        :type node1: :py:class:`psyclone.psyGen.Node`
+        :param node2: the second node we are checking
+        :type node2: :py:class:`psyclone.psyGen.Node`
+        :raises TransformationError: if one or both of the nodes is/are not a 
+        :py:class:`psyclone.psyGen.Loop`
+        :raises TransformationError: if the nodes do not have the same parent
+        :raises TransformationError: if the nodes are not next to each
+        other in the tree
+        :raises TransformationError: if the
+        :py:class:`psyclone.psyGen.Loop`s do not have the same
+        iteration space
+
+        '''
         # Check that the supplied Node is a Loop
-        from psyGen import Loop
+        from psyclone.psyGen import Loop
         if not isinstance(node1, Loop) or not isinstance(node2, Loop):
             raise TransformationError("Error in LoopFuse transformation. "
                                       "At least one of the nodes is not "
@@ -105,7 +117,7 @@ class LoopFuseTrans(Transformation):
                                       "nodes are not siblings who are "
                                       "next to each other")
         # Check iteration space is the same
-        if not node1.iteration_space == node2.iteration_space:
+        if node1.iteration_space != node2.iteration_space:
             raise TransformationError("Error in LoopFuse transformation. "
                                       "Loops do not have the same "
                                       "iteration space")
@@ -119,7 +131,7 @@ class LoopFuseTrans(Transformation):
         schedule = node1.root
 
         # create a memento of the schedule and the proposed transformation
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(schedule, self, [node1, node2])
 
         # add loop contents of node2 to node1
@@ -196,7 +208,7 @@ class DynamoLoopFuseTrans(LoopFuseTrans):
 
         LoopFuseTrans._validate(self, node1, node2)
 
-        from dynamo0p3 import VALID_FUNCTION_SPACES
+        from psyclone.dynamo0p3 import VALID_FUNCTION_SPACES
         try:
             if node1.field_space.orig_name in VALID_FUNCTION_SPACES and \
                node2.field_space.orig_name in VALID_FUNCTION_SPACES:
@@ -222,17 +234,18 @@ class DynamoLoopFuseTrans(LoopFuseTrans):
                         "be invalid. If you know the spaces are the same then "
                         "please set the 'same_space' optional argument to "
                         "True.")
-            if node1._upper_bound_name != node2._upper_bound_name:
+            if node1.upper_bound_name != node2.upper_bound_name:
                 raise TransformationError(
                     "Error in DynamoLoopFuse transformation. The upper bound "
                     "names are not the same. Found '{0}' and '{1}'".
-                    format(node1._upper_bound_name, node2._upper_bound_name))
-            if node1._upper_bound_index != node2._upper_bound_index:
+                    format(node1.upper_bound_name, node2.upper_bound_name))
+            if node1.upper_bound_halo_depth != node2.upper_bound_halo_depth:
                 raise TransformationError(
-                    "Error in DynamoLoopFuse transformation. The upper bound "
+                    "Error in DynamoLoopFuse transformation. The halo-depth "
                     "indices are not the same. Found '{0}' and '{1}'".
-                    format(node1._upper_bound_index, node2._upper_bound_index))
-            from psyGen import MAPPING_SCALARS, MAPPING_REDUCTIONS
+                    format(node1.upper_bound_halo_depth,
+                           node2.upper_bound_halo_depth))
+            from psyclone.psyGen import MAPPING_SCALARS, MAPPING_REDUCTIONS
             arg_types = MAPPING_SCALARS.values()
             arg_accesses = MAPPING_REDUCTIONS.values()
             node1_red_args = node1.args_filter(arg_types=arg_types,
@@ -277,15 +290,15 @@ class OMPLoopTrans(Transformation):
 
         For example:
 
-        >>> from parse import parse,ParseError
-        >>> from psyGen import PSyFactory,GenerationError
+        >>> from psyclone.parse import parse,ParseError
+        >>> from psyclone.psyGen import PSyFactory,GenerationError
         >>> api="gocean1.0"
         >>> filename="nemolite2d_alg.f90"
         >>> ast,invokeInfo=parse(filename,api=api,invoke_name="invoke")
         >>> psy=PSyFactory(api).create(invokeInfo)
         >>> print psy.invokes.names
         >>>
-        >>> from psyGen import TransInfo
+        >>> from psyclone.psyGen import TransInfo
         >>> t=TransInfo()
         >>> ltrans = t.get_trans_name('OMPLoopTrans')
         >>> rtrans = t.get_trans_name('OMPParallelTrans')
@@ -356,6 +369,20 @@ class OMPLoopTrans(Transformation):
         self.omp_schedule = omp_schedule
         Transformation.__init__(self)
 
+    def _validate(self, node):
+        ''' Perform validation checks before applying the transformation'''
+        # Check that the supplied node is a Loop
+        from psyclone.psyGen import Loop
+        if not isinstance(node, Loop):
+            raise TransformationError("Cannot apply an OpenMP Loop "
+                                      "directive to something that is "
+                                      "not a loop")
+        # Check we are not a sequential loop
+        if node.loop_type == 'colours':
+            raise TransformationError("Error in "+self.name+" transformation. "
+                                      "The target loop is over colours and "
+                                      "must be computed serially.")
+
     def apply(self, node, reprod=None):
         '''Apply the OMPLoopTrans transformation to the specified node in a
         Schedule. This node must be a Loop since this transformation
@@ -380,29 +407,30 @@ class OMPLoopTrans(Transformation):
         with the same number of OpenMP threads, not for different
         numbers of OpenMP threads.
 
+        :param node: the supplied node to which we will apply the
+        OMPLoopTrans transformation
+        :type node: :py:class:`psyclone.psyGen.Node`
+        :param reprod: optional argument to determine whether to
+        generate reproducible OpenMP reductions (True) or not
+        (False). The default value is None which will cause PSyclone
+        to look up a default value
+        :type reprod: Boolean, or None
+        :return: (:py:class:`psyclone.psyGen.Schedule`,
+        :py:class:`psyclone.undoredo.Memento`)
+
         '''
 
-        if reprod is None:
-            import config
-            reprod = config.REPRODUCIBLE_REDUCTIONS
+        self._validate(node)
 
-        # Check that the supplied node is a Loop
-        from psyGen import Loop
-        if not isinstance(node, Loop):
-            raise TransformationError("Cannot apply an OpenMP Loop "
-                                      "directive to something that is "
-                                      "not a loop")
-        # Check we are not a sequential loop
-        if node.loop_type == 'colours':
-            raise TransformationError("Error in "+self.name+" transformation. "
-                                      "The target loop is over colours and "
-                                      "must be computed serially.")
+        if reprod is None:
+            import psyclone.config
+            reprod = psyclone.config.REPRODUCIBLE_REDUCTIONS
 
         schedule = node.root
 
         # create a memento of the schedule and the proposed
         # transformation
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(schedule, self, [node])
 
         # keep a reference to the node's original parent and its index as these
@@ -412,7 +440,7 @@ class OMPLoopTrans(Transformation):
 
         # add our orphan OpenMP loop directive setting its parent to
         # the node's parent and its children to the node
-        from psyGen import OMPDoDirective
+        from psyclone.psyGen import OMPDoDirective
         directive = OMPDoDirective(parent=node_parent,
                                    children=[node],
                                    omp_schedule=self.omp_schedule,
@@ -436,14 +464,14 @@ class OMPParallelLoopTrans(OMPLoopTrans):
 
         For example:
 
-        >>> from parse import parse
-        >>> from psyGen import PSyFactory
+        >>> from psyclone.parse import parse
+        >>> from psyclone.psyGen import PSyFactory
         >>> ast,invokeInfo=parse("dynamo.F90")
         >>> psy=PSyFactory("dynamo0.1").create(invokeInfo)
         >>> schedule=psy.invokes.get('invoke_v3_kernel_type').schedule
         >>> schedule.view()
         >>>
-        >>> from transformations import OMPParallelLoopTrans
+        >>> from psyclone.transformations import OMPParallelLoopTrans
         >>> trans=OMPParallelLoopTrans()
         >>> new_schedule,memento=trans.apply(schedule.children[0])
         >>> new_schedule.view()
@@ -461,7 +489,7 @@ class OMPParallelLoopTrans(OMPLoopTrans):
     def _validate(self, node):
         ''' validity checks for input arguments '''
         # Check that the supplied Node is a Loop
-        from psyGen import Loop
+        from psyclone.psyGen import Loop
         if not isinstance(node, Loop):
             raise TransformationError("Error in {0} transformation. The "
                                       "node is not a loop.".format(self.name))
@@ -491,7 +519,7 @@ class OMPParallelLoopTrans(OMPLoopTrans):
 
         schedule = node.root
         # create a memento of the schedule and the proposed transformation
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(schedule, self, [node])
 
         # keep a reference to the node's original parent and its index as these
@@ -501,7 +529,7 @@ class OMPParallelLoopTrans(OMPLoopTrans):
 
         # add our OpenMP loop directive setting its parent to the node's
         # parent and its children to the node
-        from psyGen import OMPParallelDoDirective
+        from psyclone.psyGen import OMPParallelDoDirective
         directive = OMPParallelDoDirective(parent=node_parent,
                                            children=[node],
                                            omp_schedule=self.omp_schedule)
@@ -609,14 +637,11 @@ class Dynamo0p3OMPLoopTrans(OMPLoopTrans):
         '''
 
         if reprod is None:
-            import config
-            reprod = config.REPRODUCIBLE_REDUCTIONS
+            import psyclone.config
+            reprod = psyclone.config.REPRODUCIBLE_REDUCTIONS
 
-        # check node is a loop
-        from psyGen import Loop
-        if not isinstance(node, Loop):
-            raise TransformationError("Error in "+self.name+" transformation."
-                                      " The node is not a loop.")
+        OMPLoopTrans._validate(self, node)
+
         # If the loop is not already coloured then check whether or not
         # it should be
         if node.loop_type is not 'colour' and node.has_inc_arg():
@@ -651,7 +676,7 @@ class GOceanOMPLoopTrans(OMPLoopTrans):
         # check node is a loop. Although this is not GOcean specific
         # it is required for the subsequent checks to function
         # correctly.
-        from psyGen import Loop
+        from psyclone.psyGen import Loop
         if not isinstance(node, Loop):
             raise TransformationError("Error in "+self.name+" transformation."
                                       " The node is not a loop.")
@@ -698,7 +723,7 @@ class ColourTrans(Transformation):
         schedule = node.root
 
         # create a memento of the schedule and the proposed transformation
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(schedule, self, [node])
 
         node_parent = node.parent
@@ -720,7 +745,12 @@ class ColourTrans(Transformation):
         colour_loop.field_space = node.field_space
         colour_loop.iteration_space = node.iteration_space
         colour_loop.set_lower_bound("start")
-        colour_loop.set_upper_bound("ncolour")
+        import psyclone.config
+        if psyclone.config.DISTRIBUTED_MEMORY:
+            index = node.upper_bound_halo_depth
+            colour_loop.set_upper_bound("colour_halo", index)
+        else:  # no distributed memory
+            colour_loop.set_upper_bound("ncolour")
         # Add this loop as a child of our loop over colours
         colours_loop.addchild(colour_loop)
 
@@ -779,7 +809,7 @@ class KernelModuleInlineTrans(Transformation):
         the inline argument. If the inline argument is not passed the
         Kernel is marked to be inlined.'''
         # check node is a kernel
-        from psyGen import Kern
+        from psyclone.psyGen import Kern
         if not isinstance(node, Kern):
             raise TransformationError(
                 "Error in KernelModuleInline transformation. The node is not "
@@ -788,7 +818,7 @@ class KernelModuleInlineTrans(Transformation):
         schedule = node.root
 
         # create a memento of the schedule and the proposed transformation
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(schedule, self, [node])
 
         # set kernel's inline status
@@ -807,8 +837,8 @@ class Dynamo0p3ColourTrans(ColourTrans):
     ''' Split a Dynamo 0.3 loop over cells into colours so that it can be
     parallelised. For example:
 
-    >>> from parse import parse
-    >>> from psyGen import PSyFactory
+    >>> from psyclone.parse import parse
+    >>> from psyclone.psyGen import PSyFactory
     >>> import transformations
     >>> import os
     >>> import pytest
@@ -868,15 +898,16 @@ class Dynamo0p3ColourTrans(ColourTrans):
 
         '''
         # check node is a loop
-        from psyGen import Loop
+        from psyclone.psyGen import Loop
         if not isinstance(node, Loop):
             raise TransformationError("Error in DynamoColour transformation. "
                                       "The supplied node is not a loop")
         # Check we need colouring
-        if node.field_space.orig_name == "w3":
-            pass
-            # TODO generate a warning here as we don't need to colour
-            # a loop that updates a field on W3.
+        from psyclone.dynamo0p3 import DISCONTINUOUS_FUNCTION_SPACES
+        if node.field_space.orig_name in DISCONTINUOUS_FUNCTION_SPACES:
+            raise TransformationError(
+                "Error in DynamoColour transformation. Loops iterating over "
+                "a discontinuous function space are not currently supported.")
 
         # Colouring is only necessary (and permitted) if the loop is
         # over cells. Since this is the default it is represented by
@@ -896,7 +927,7 @@ class Dynamo0p3ColourTrans(ColourTrans):
         # Check that we're not attempting to colour a loop that is
         # already within an OpenMP region (because the loop over
         # colours *must* be sequential)
-        from psyGen import OMPDirective
+        from psyclone.psyGen import OMPDirective
         if node.ancestor(OMPDirective):
             raise TransformationError("Cannot have a loop over colours "
                                       "within an OpenMP parallel region.")
@@ -911,14 +942,14 @@ class OMPParallelTrans(Transformation):
     ''' Create an OpenMP PARALLEL region by inserting directives. For
     example:
 
-    >>> from parse import parse, ParseError
-    >>> from psyGen import PSyFactory, GenerationError
+    >>> from psyclone.parse import parse, ParseError
+    >>> from psyclone.psyGen import PSyFactory, GenerationError
     >>> api="gocean1.0"
     >>> filename="nemolite2d_alg.f90"
     >>> ast,invokeInfo=parse(filename,api=api,invoke_name="invoke")
     >>> psy=PSyFactory(api).create(invokeInfo)
     >>>
-    >>> from psyGen import TransInfo
+    >>> from psyclone.psyGen import TransInfo
     >>> t=TransInfo()
     >>> ltrans = t.get_trans_name('GOceanOMPLoopTrans')
     >>> rtrans = t.get_trans_name('OMPParallelTrans')
@@ -955,12 +986,12 @@ class OMPParallelTrans(Transformation):
             can be a single Node or a list of Nodes.
 
         '''
-        from psyGen import OMPDirective, OMPParallelDirective
+        from psyclone.psyGen import OMPDirective, OMPParallelDirective
 
         # Check whether we've been passed a list of nodes or just a
         # single node. If the latter then we create ourselves a
         # list containing just that node.
-        from psyGen import Node
+        from psyclone.psyGen import Node
         if isinstance(nodes, list) and isinstance(nodes[0], Node):
             node_list = nodes
         elif isinstance(nodes, Node):
@@ -978,7 +1009,7 @@ class OMPParallelTrans(Transformation):
         # existing within a parallel region. As we are going to
         # support this in the future, see #526, it does not warrant
         # making a separate dynamo-specific class.
-        from psyGen import HaloExchange
+        from psyclone.psyGen import HaloExchange
         for node in node_list:
             if isinstance(node, HaloExchange):
                 raise TransformationError(
@@ -1006,7 +1037,7 @@ class OMPParallelTrans(Transformation):
         # transformation
         schedule = node_list[0].root
 
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(schedule, self)
 
         # Create the OpenMP parallel directive as a child of the
@@ -1060,8 +1091,8 @@ class GOConstLoopBoundsTrans(Transformation):
     In practice, the application of the constant loop bounds looks
     something like, e.g.:
 
-    >>> from parse import parse
-    >>> from psyGen import PSyFactory
+    >>> from psyclone.parse import parse
+    >>> from psyclone.psyGen import PSyFactory
     >>> import os
     >>> TEST_API = "gocean1.0"
     >>> _,info = parse(os.path.join("tests", "test_files", "gocean1p0",
@@ -1071,7 +1102,7 @@ class GOConstLoopBoundsTrans(Transformation):
     >>> invoke = psy.invokes.get('invoke_0_compute_cu')
     >>> schedule = invoke.schedule
     >>>
-    >>> from transformations import GOConstLoopBoundsTrans
+    >>> from psyclone.transformations import GOConstLoopBoundsTrans
     >>> clbtrans = GOConstLoopBoundsTrans()
     >>>
     >>> newsched, _ = clbtrans.apply(schedule)
@@ -1093,12 +1124,12 @@ class GOConstLoopBoundsTrans(Transformation):
     def apply(self, node, const_bounds=True):
 
         # Check node is a Schedule
-        from gocean1p0 import GOSchedule
+        from psyclone.gocean1p0 import GOSchedule
         if not isinstance(node, GOSchedule):
             raise TransformationError("Error in GOConstLoopBoundsTrans: "
                                       "node is not a GOSchedule")
 
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(node, self)
 
         node.const_loop_bounds = const_bounds
@@ -1110,14 +1141,14 @@ class MoveTrans(Transformation):
     '''Provides a transformation to move a node in the tree. For
     example:
 
-    >>> from parse import parse
-    >>> from psyGen import PSyFactory
+    >>> from psyclone.parse import parse
+    >>> from psyclone.psyGen import PSyFactory
     >>> ast,invokeInfo=parse("dynamo.F90")
     >>> psy=PSyFactory("dynamo0.3").create(invokeInfo)
     >>> schedule=psy.invokes.get('invoke_v3_kernel_type').schedule
     >>> schedule.view()
     >>>
-    >>> from transformations import MoveTrans
+    >>> from psyclone.transformations import MoveTrans
     >>> trans=MoveTrans()
     >>> new_schedule, memento = trans.apply(schedule.children[0],
                                             schedule.children[2],
@@ -1140,7 +1171,7 @@ class MoveTrans(Transformation):
         ''' validity checks for input arguments '''
 
         # Check that the first argument is a Node
-        from psyGen import Node
+        from psyclone.psyGen import Node
         if not isinstance(node, Node):
             raise TransformationError(
                 "In the Move transformation apply method the first argument "
@@ -1164,7 +1195,7 @@ class MoveTrans(Transformation):
         schedule = node.root
 
         # create a memento of the schedule and the proposed transformation
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(schedule, self, [node, location])
 
         parent = node.parent
@@ -1180,11 +1211,26 @@ class MoveTrans(Transformation):
         return schedule, keep
 
 
-class DynamoRedundantComputationTrans(Transformation):
+class Dynamo0p3RedundantComputationTrans(Transformation):
     '''This transformation allows the user to modify a loop's bounds so
-    that redundant computation will be performed. Redundant computation
-    can result in halo exchanges being modified, new halo exchange being
-    added or existing halo exchanges being removed.'''
+    that redundant computation will be performed. Redundant
+    computation can result in halo exchanges being modified, new halo
+    exchanges being added or existing halo exchanges being removed.
+
+    * This transformation should be performed before any
+      parallelisation transformations (e.g. for OpenMP) to the loop in
+      question and will raise an exception if this is not the case.
+
+    * This transformation can not be applied to a loop containing a
+      reduction and will again raise an exception if this is the case.
+
+    * This transformation can only be used to add redundant
+      computation to a loop, not to remove it, however it does allow
+      redundant computation depths to be reduced (if this is ever
+      required).
+
+    '''
+
     def __str__(self):
         return "Change iteration space to perform redundant computation"
 
@@ -1195,52 +1241,132 @@ class DynamoRedundantComputationTrans(Transformation):
 
     def _validate(self, node, depth):
         '''Perform various checks to ensure that it is valid to apply the
-        RedundantComputation transformation to the supplied node'''
+        RedundantComputation transformation to the supplied node
 
+        :param node: the supplied node on which we are performing
+        validity checks
+        :type node: :py:class:`psyclone.psyGen.Node`
+        :param depth: the depth of the stencil if the value is
+        provided and None if not
+        :type depth: int or None
+        :raises GenerationError: if the node is not a
+        :py:class:`psyclone.psyGen.Loop`
+        :raises GenerationError: if the parent of the loop is a
+        :py:class:`psyclone.psyGen.Directive`
+        :raises GenerationError: if the parent of the loop is not a
+        :py:class:`psyclone.psyGen.Loop` or a
+        :py:class:`psyclone.psyGen.Schedule`
+        :raises GenerationError: if the parent of the loop is a
+        :py:class:`psyclone.psyGen.Loop` but the original loop does
+        not iterate over 'colour'
+        :raises GenerationError: if the parent of the loop is a
+        :py:class:`psyclone.psyGen.Loop` but the parent does not
+        iterate over 'colours'
+        :raises GenerationError: if the parent of the loop is a
+        :py:class:`psyclone.psyGen.Loop` but the parent's parent is
+        not a :py:class:`psyclone.psyGen.Schedule`
+        :raises GenerationError: if this transformation is applied
+        when distributed memory is not switched on
+        :raises GenerationError: if the loop does not iterate over
+        cells, dofs or colour
+        :raises GenerationError: if the transformation is setting the
+        loop to the maximum halo depth but the loop already computes
+        to the maximum halo depth
+        :raises GenerationError: if the transformation is setting the
+        loop to the maximum halo depth but the loop contains a stencil
+        access (as this would result in the field being accessed
+        beyond the halo depth)
+        :raises GenerationError: if the supplied depth value is not an
+        integer
+        :raises GenerationError: if the supplied depth value is less
+        than 1
+        :raises GenerationError: if the supplied depth value is not
+        greater than 1 when a continuous loop is modified as this is
+        the minimum valid value
+        :raises GenerationError: if the supplied depth value is not
+        greater than the existing depth value, as we should not need
+        to undo existing transformations
+        :raises GenerationError: if a depth value has been supplied
+        but the loop has already been set to the maximum halo depth
+
+        '''
         # check node is a loop
-        from psyGen import Loop
+        from psyclone.psyGen import Loop
         if not isinstance(node, Loop):
             raise TransformationError(
-                "In the DynamoRedundantComputation transformation apply "
+                "In the Dynamo0p3RedundantComputation transformation apply "
                 "method the first argument is not a Loop")
-
-        # check loop's parent is the schedule otherwise halo exchange
-        # placement fails. The only current example when this would be
-        # the case is when directives have been added.
-        from psyGen import Schedule
-        if not isinstance(node.parent, Schedule):
+        # check loop's parent is the schedule, or its parent is a
+        # colours loop and perform other colour(s) loop checks,
+        # otherwise halo exchange placement might fail. The only
+        # current example where the placement would fail is when
+        # directives have already been added. This could be fixed but
+        # it actually makes sense to require redundant computation
+        # transformations to be applied before adding directives so it
+        # is not particularly important.
+        from psyclone.psyGen import Schedule
+        if not (isinstance(node.parent, Schedule) or
+                (isinstance(node.parent, Loop))):
+            from psyclone.psyGen import Directive
+            if isinstance(node.parent, Directive):
+                raise TransformationError(
+                    "In the Dynamo0p3RedundantComputation transformation "
+                    "apply method the parent of the supplied loop is a "
+                    "directive of type {0}. Redundant computation must be "
+                    "applied before directives are "
+                    "added.".format(type(node.parent)))
+            else:
+                raise TransformationError(
+                    "In the Dynamo0p3RedundantComputation transformation "
+                    "apply method the parent of the supplied loop must be "
+                    "the Schedule, or a Loop, but found {0}".
+                    format(type(node.parent)))
+        if isinstance(node.parent, Loop):
+            if node.loop_type != "colour":
+                raise TransformationError(
+                    "In the Dynamo0p3RedundantComputation transformation "
+                    "apply method, if the parent of the supplied Loop is "
+                    "also a Loop then the supplied Loop must iterate over "
+                    "'colour', but found '{0}'".format(node.loop_type))
+            if node.parent.loop_type != "colours":
+                raise TransformationError(
+                    "In the Dynamo0p3RedundantComputation transformation "
+                    "apply method, if the parent of the supplied Loop is "
+                    "also a Loop then the parent must iterate over "
+                    "'colours', but found '{0}'".format(node.parent.loop_type))
+            if not isinstance(node.parent.parent, Schedule):
+                raise TransformationError(
+                    "In the Dynamo0p3RedundantComputation transformation "
+                    "apply method, if the parent of the supplied Loop is "
+                    "also a Loop then the parent's parent must be the "
+                    "Schedule, but found {0}".format(type(node.parent)))
+        import psyclone.config
+        if not psyclone.config.DISTRIBUTED_MEMORY:
             raise TransformationError(
-                "In the DynamoRedundantComputation transformation apply "
-                "method the parent must be the schedule, but found "
-                "{0}".format(type(node.parent)))
-
-        import config
-        if not config.DISTRIBUTED_MEMORY:
-            raise TransformationError(
-                "In the DynamoRedundantComputation transformation apply "
+                "In the Dynamo0p3RedundantComputation transformation apply "
                 "method distributed memory must be switched on")
 
-        # loop must iterate over cells or dofs. This currently
-        # precludes loops over colours. Note, an empty loop_type
-        # iterates over cells
-        if node.loop_type not in ["", "dofs"]:
-                raise TransformationError(
-                    "In the DynamoRedundantComputation transformation apply "
-                    "method the loop must iterate over cells or dofs, but "
-                    "found '{0}'".format(node.loop_type))
+        # loop must iterate over cells, dofs or colour. Note, an
+        # empty loop_type iterates over cells
+        if node.loop_type not in ["", "dofs", "colour"]:
+            raise TransformationError(
+                "In the Dynamo0p3RedundantComputation transformation apply "
+                "method the loop must iterate over cells, dofs or cells of "
+                "a given colour, but found '{0}'".format(node.loop_type))
 
         if depth is None:
-            if node.upper_bound_name in ["cell_halo", "dof_halo"]:
-                if not node.upper_bound_index:
+            if node.upper_bound_name in ["cell_halo", "dof_halo",
+                                         "colour_halo"]:
+                if not node.upper_bound_halo_depth:
                     raise TransformationError(
-                        "In the DynamoRedundantComputation transformation "
+                        "In the Dynamo0p3RedundantComputation transformation "
                         "apply method the loop is already set to the maximum "
                         "halo depth so this transformation does nothing")
                 for call in node.calls():
                     for arg in call.arguments.args:
                         if arg.stencil:
                             raise TransformationError(
-                                "In the DynamoRedundantComputation "
+                                "In the Dynamo0p3RedundantComputation "
                                 "transformation apply method the loop "
                                 "contains field '{0}' with a stencil "
                                 "access in kernel '{1}', so it is invalid "
@@ -1249,31 +1375,27 @@ class DynamoRedundantComputationTrans(Transformation):
         else:
             if not isinstance(depth, int):
                 raise TransformationError(
-                    "In the DynamoRedundantComputation transformation apply "
-                    "method the supplied depth should be an integer")
+                    "In the Dynamo0p3RedundantComputation transformation "
+                    "apply method the supplied depth should be an integer but "
+                    "found type '{0}'".format(type(depth)))
             if depth < 1:
                 raise TransformationError(
-                    "In the DynamoRedundantComputation transformation apply "
-                    "method the supplied depth is less than 1")
+                    "In the Dynamo0p3RedundantComputation transformation "
+                    "apply method the supplied depth is less than 1")
 
-            if not node.field.discontinuous and depth == 1 and \
-               node.iteration_space == "cells":
-                raise TransformationError(
-                    "In the DynamoRedundantComputation transformation apply "
-                    "method the supplied depth must be greater than 1 as this "
-                    "loop  modifies a continuous field")
-
-            if node.upper_bound_name in ["cell_halo", "dof_halo"]:
-                if node.upper_bound_index:
-                    if node.upper_bound_index >= depth:
+            if node.upper_bound_name in ["cell_halo", "dof_halo",
+                                         "colour_halo"]:
+                if node.upper_bound_halo_depth:
+                    if node.upper_bound_halo_depth >= depth:
                         raise TransformationError(
-                            "In the DynamoRedundantComputation transformation "
-                            "apply method the supplied depth ({0}) must be "
-                            "greater than the existing halo depth ({1})".
-                            format(depth, node.upper_bound_index))
+                            "In the Dynamo0p3RedundantComputation "
+                            "transformation apply method the supplied depth "
+                            "({0}) must be greater than the existing halo "
+                            "depth ({1})".format(depth,
+                                                 node.upper_bound_halo_depth))
                 else:
                     raise TransformationError(
-                        "In the DynamoRedundantComputation transformation "
+                        "In the Dynamo0p3RedundantComputation transformation "
                         "apply method the loop is already set to the maximum "
                         "halo depth so can't be set to a fixed value")
 
@@ -1284,22 +1406,34 @@ class DynamoRedundantComputationTrans(Transformation):
         value will be the depth of the field's halo over which redundant
         computation will be performed. If :py:obj:`depth` is not set to a
         value then redundant computation will be performed to the full depth
-        of the field's halo.'''
+        of the field's halo.
 
+        :param loop: the loop that we are transforming
+        :type loop: :py:class:`psyclone.psyGen.DynLoop`
+        :param depth: the depth of the stencil. Defaults to None if a
+        depth is not provided.
+        :type depth: int or None
+
+        '''
         self._validate(loop, depth)
 
         schedule = loop.root
 
         # create a memento of the schedule and the proposed
         # transformation
-        from undoredo import Memento
+        from psyclone.undoredo import Memento
         keep = Memento(schedule, self, [loop, depth])
 
         if loop.loop_type == "":  # iteration space is cells
             loop.set_upper_bound("cell_halo", depth)
-        else:  # iteration space is dofs
+        elif loop.loop_type == "colour":
+            loop.set_upper_bound("colour_halo", depth)
+        elif loop.loop_type == "dofs":
             loop.set_upper_bound("dof_halo", depth)
-
+        else:
+            raise TransformationError(
+                "Unsupported loop_type '{0}' found in Dynamo0p3Redundant"
+                "ComputationTrans.apply()".format(loop.loop_type))
         # Add/remove halo exchanges as required due to the redundant
         # computation
         loop.update_halo_exchanges()

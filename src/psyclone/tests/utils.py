@@ -35,6 +35,7 @@
 
 ''' test utilities '''
 
+from __future__ import absolute_import
 import os
 import pytest
 
@@ -43,7 +44,9 @@ FORTRAN_SUFFIXES = ["f90", "F90", "x90"]
 
 # Whether or not we run tests requiring code compilation is picked-up
 # from a command-line flag. (This is set-up in conftest.py.)
+# pylint: disable=no-member
 TEST_COMPILE = pytest.config.getoption("--compile")
+# pylint: enable=no-member
 # The following allows us to mark a test with @utils.COMPILE if it is
 # only to be run when the --compile option is passed to py.test
 COMPILE = pytest.mark.skipif(not TEST_COMPILE,
@@ -54,6 +57,7 @@ class CompileError(Exception):
     ''' Exception raised when compilation of a Fortran source file
     fails '''
     def __init__(self, value):
+        # pylint: disable=super-init-not-called
         self.value = "Compile error: " + value
 
     def __str__(self):
@@ -79,6 +83,22 @@ def count_lines(root, string_name):
         if string_name in line:
             count += 1
     return count
+
+
+def print_diffs(expected, actual):
+    '''
+    Pretty-print the diff between the two, possibly multi-line, strings
+
+    :param str expected: Multi-line string
+    :param str actual: Multi-line string
+    '''
+    import difflib
+    from pprint import pprint
+    expected_lines = expected.splitlines()
+    actual_lines = actual.splitlines()
+    diff = difflib.Differ()
+    diff_list = list(diff.compare(expected_lines, actual_lines))
+    pprint(diff_list)
 
 
 def find_fortran_file(path, root_name):
@@ -179,7 +199,6 @@ def code_compiles(api, psy_ast, tmpdir, f90, f90flags):
     kernel_modules = set()
     # Get the names of the modules associated with the kernels. By definition,
     # built-ins do not have associated Fortran modules.
-    from psyclone.psyGen import BuiltIn
     for invoke in psy_ast.invokes.invoke_list:
         for call in invoke.schedule.kern_calls():
             kernel_modules.add(call.module_name)
