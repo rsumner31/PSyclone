@@ -33,17 +33,9 @@ objects and their use are discussed in the following sections.
 
 ::
 
-  real(kind=r_def)      	 :: scalar1
-  integer(kind=i_def)   	 :: stencil_extent
-  type(field_type)      	 :: field1, field2, field3
-  type(quadrature_type) 	 :: qr
-  type(operator_type)   	 :: operator1
-  type(columnwise_operator_type) :: cma_op1
-  ...
   call invoke( kernel1(field1, field2, operator1, qr),           &
                builtin1(scalar1, field2, field3),                &
                kernel2(field1, stencil_extent, field3, scalar1), &
-	       assembly_kernel(cma_op1, operator1),              &
                name="some calculation"                           &
              )
 
@@ -63,9 +55,7 @@ Field Vector
 Scalar
 ++++++
 
-In Dynamo 0.3 API a scalar is a single value variable that can be
-either real or integer. Real scalars are identified with ``GH_REAL``
-and integer scalars are identified with ``GH_INTEGER`` metadata.
+.. note:: To be written.
 
 Operator
 ++++++++
@@ -120,29 +110,10 @@ meta-data (see :ref:`cma_meta_data_rules` below). The names of the
 kernels in the above example are purely illustrative and are not used
 by PSyclone when determining kernel type.
 
-.. _quadrature:
+Quadrature rule
++++++++++++++++
 
-Quadrature
-++++++++++
-
-Kernels conforming to the Dynamo 0.3 API may require quadrature
-information (specified using e.g. ``gh_shape = gh_quadrature_XYoZ`` in
-the kernel meta-data - see Section :ref:`gh-shape`). This information
-must be passed to the kernel from the Algorithm layer in the form of a
-`quadrature_type` object. This must be the last argument passed to the
-kernel, e.g.:
-
-::
-
-      type( quadrature_type )   :: qr
-      ...
-      qr = quadrature_type(element_order+2, GAUSSIAN)
-      call invoke(pressure_gradient_kernel_type(rhs_tmp(igh_u), rho, theta, qr),   &
-                  kinetic_energy_gradient_kernel_type(rhs_tmp(igh_u), u, chi, qr), &
-                  geopotential_gradient_kernel_type(rhs_tmp(igh_u), geopotential, qr))
-
-This quadrature object specifies the set of points at which the 
-basis/differential-basis functions required by the kernel are to be evaluated.
+.. note:: To be written.
 
 .. _dynamo0.3-alg-stencil:
 
@@ -257,12 +228,11 @@ Kernel
 -------
 
 The general requirements for the structure of a Kernel are explained
-in the :ref:`kernel-layer` section. In the Dynamo API there are four
-different Kernel types; general purpose, CMA, inter-grid and
-:ref:`dynamo_built-ins`. For the latter type, PSyclone generates the
-source of the kernels.  This section explains the rules for the other
-three, user-supplied kernel types and then goes on to describe their
-metadata and subroutine arguments.
+in the :ref:`kernel-layer` section. In the Dynamo API there are three
+different Kernel types; general purpose (user-supplied), CMA
+(user-supplied) and :ref:`dynamo_built-ins`. This section explains the
+rules for the two user-supplied kernel types and then goes on to
+describe their metadata and subroutine arguments.
 
 Rules for all User-Supplied Kernels
 +++++++++++++++++++++++++++++++++++
@@ -292,7 +262,7 @@ types.
 
  4) Operators do not have halo operations operating on them as they
     are either cell- (LMA) or column-based (CMA) and therefore act
-    like discontinuous fields.
+    like discontinous fields.
 
  5) Any Kernel that writes to an operator will have its iteration
     space expanded such that valid values for the operator are
@@ -341,7 +311,7 @@ All three CMA-related kernel types must obey the following rules:
      permitted as arguments.
 
 There are then additional rules specific to each of the three
-CMA kernel types. These are described below.
+kernel types. These are described below.
 
 Assembly
 ########
@@ -381,24 +351,6 @@ operation. In this case:
 
 2) Exactly one of the CMA arguments must be written to while all other
    arguments must be read-only.
-
-Rules for Inter-Grid Kernels
-++++++++++++++++++++++++++++
-
-1) An inter-grid kernel is identified by the presence of a field argument with
-   the optional `mesh_arg` meta-data element (see
-   :ref:`dynamo0.3-intergrid-mdata`).
-
-2) An inter-grid kernel is only permitted to have field or field-vector
-   arguments.
-
-3) All inter-grid kernel arguments must have the `mesh_arg` meta-data entry.
-
-4) An inter-grid kernel (and metadata) must have at least one field on
-   each of the fine and coarse meshes. Specifying all fields as coarse or
-   fine is forbidden.
-
-5) Fields on different meshes must always live on different function spaces.
 
 Metadata
 ++++++++
@@ -512,11 +464,7 @@ For example:
        arg_type(GH_OPERATOR, GH_READ, ...)                             &
        /)
 
-.. note:: In the Dynamo 0.3 API only :ref:`dynamo_built-ins` are permitted
-          to write to scalar arguments (and hence perform reductions).
-          Furthermore, this permission is currently restricted to integer
-          scalars (``GH_INTEGER``) as the LFRic infrastructure does not
-          yet support integer reductions.
+.. note:: In the Dynamo 0.3 API only :ref:`dynamo_built-ins` are permitted to write to scalar arguments (and hence perform reductions).
 
 For a scalar the argument metadata contains only these two entries.
 However, fields and operators require further entries specifying
@@ -613,29 +561,25 @@ then the permitted access modes depend on the type of data it is and
 the function space it is on. Valid values are given in the table
 below.
 
-======================	============================    =========================
+======================	============================    =======================
 Argument Type     	Function space                  Access type
-======================	============================    =========================
-*GH_INTEGER*        	*n/a*                           *GH_SUM (Built-ins only)*
+======================	============================    =======================
+GH_INTEGER        	n/a                             GH_SUM (Built-ins only)
 GH_REAL           	n/a                             GH_SUM (Built-ins only)
 GH_FIELD                Discontinuous (w3)              GH_WRITE
 GH_FIELD                Continuous (not w3)             GH_INC
 GH_OPERATOR             Any for both 'to' and 'from'    GH_WRITE
 GH_COLUMNWISE_OPERATOR  Any for both 'to' and 'from'    GH_WRITE
-======================  ============================    =========================
+======================  ============================    =======================
 
-.. note:: As mentioned above, note that only Built-ins may modify
-          scalar arguments. *Since the LFRic infrastructure does not
-          currently support integer reductions, integer scalar arguments
-          are restricted to having read-only access.*
-
-There is no restriction on the number and function-spaces of other
-quantities that a general-purpose kernel can modify other than that it
-must modify at least one. The rules for kernels involving CMA operators,
-however, are stricter and only one argument may be modified (the CMA
-operator itself for assembly, a field for CMA-application and a CMA
-operator for matrix-matrix kernels). If a kernel writes to quantities
-on different function spaces then PSyclone generates loop bounds
+Note that only Built-ins may modify scalar arguments. There is no
+restriction on the number and function-spaces of other quantities that
+a general-purpose kernel can modify other than that it must modify at
+least one. The rules for kernels involving CMA operators, however, are
+stricter and only one argument may be modified (the CMA operator
+itself for assembly, a field for CMA-application and a CMA operator
+for matrix-matrix kernels). If a kernel writes to quantities on
+different function spaces then PSyclone generates loop bounds
 appropriate to the largest iteration space. This means that if a
 single kernel updates one quantity on a continuous function space and
 one on a discontinuous space then the resulting loop will include
@@ -654,24 +598,15 @@ checks (when generating the PSy layer) that any kernels which read
 operator values do not do so beyond the level-1 halo. If any such
 accesses are found then PSyclone aborts.
 
-Optional Field Metadata
-^^^^^^^^^^^^^^^^^^^^^^^
-
-A field entry in the meta_args array may have an optional fourth element.
-This element describes either a stencil access or, for inter-grid kernels,
-which mesh the field is on. Since an inter-grid kernel is not permitted
-to have stencil accesses, these two options are mutually exclusive.
-The meta-data for each case is described in the following sections.
-
 Stencil Metadata
-________________
+^^^^^^^^^^^^^^^^
 
-
-Stencil metadata specifies that the corresponding field argument is accessed
-as a stencil operation within the Kernel.  Stencil metadata only makes sense
-if the associated field is read within a Kernel i.e. it only makes
-sense to specify stencil metadata if the first entry is ``GH_FIELD``
-and the second entry is ``GH_READ``.
+Field metadata supports an optional 4th argument which specifies that
+the field is accessed as a stencil operation within the
+Kernel. Stencil metadata only makes sense if the associated field is
+read within a Kernel i.e. it only makes sense to specify stencil
+metadata if the first entry is ``GH_FIELD`` and the second entry is
+``GH_READ``.
 
 Stencil metadata is written in the following format:
 
@@ -735,42 +670,6 @@ Below is an example of stencil information within the full kernel metadata.
 
 There is a full example of this distributed with PSyclone. It may
 be found in ``examples/dynamo0p3/eg5``.
-
-.. _dynamo0.3-intergrid-mdata:
-
-Inter-Grid Metadata
-___________________
-
-
-The alternative form of the optional fourth metadata argument for a
-field specifies which mesh the associated field is on.  This is
-required for inter-grid kernels which perform prolongation or
-restriction operations on fields (or field vectors) existing on grids
-of different resolutions.
-
-Mesh metadata is written in the following format:
-
-::
-
-  mesh_arg=type
-
-where ``type`` may be one of ``GH_COARSE`` or ``GH_FINE``. Any kernel
-having a field argument with this meta-data is assumed to be an
-inter-grid kernel and, as such, all of its other arguments (which
-must also be fields) must have it specified too. An example of the
-metadata for such a kernel is give below:
-
-::
-
-  type(arg_type) :: meta_args(2) = (/                               &
-      arg_type(GH_FIELD, GH_INC,  ANY_SPACE_1, mesh_arg=GH_COARSE), &
-      arg_type(GH_FIELD, GH_READ, ANY_SPACE_2, mesh_arg=GH_FINE  )  &
-      /)
-
-Note that an inter-grid kernel must have at least one field (or field-
-vector) argument on each mesh type and that fields that are on different
-meshes cannot be on the same function space.
-
 
 Column-wise Operators (CMA)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -849,8 +748,6 @@ spaces associated with the arguments listed in ``meta_args``.  In this
 case we require both for the W0 function space but only basis
 functions for W1.
 
-.. _gh-shape:
-
 gh_shape
 ########
 
@@ -859,14 +756,7 @@ meta-data must also specify the set of points on which these functions
 are required. This information is provided by the ``gh_shape``
 component of the meta-data.  Currently PSyclone supports two shapes;
 ``gh_quadrature_XYoZ`` for Gaussian quadrature points and
-``gh_evaluator`` for evaluation at nodal points. For the latter,
-the values of the basis/differential-basis functions are computed at
-the nodes defined by the function space of the quantity that the
-associated kernel is updating. All necessary data is extracted in the
-PSy layer and passed to the kernel(s) as required - nothing is
-required from the Algorithm layer. If a kernel requires quadrature on
-the other hand, the Algorithm writer must supply a ``quadrature_type``
-object as the last argument to the kernel (see Section :ref:`quadrature`).
+``gh_evaluator`` for evaluation at nodal points.
 
 Note that it is an error for kernel meta-data to specify a value for
 ``gh_shape`` if no basis or differential-basis functions are
@@ -1126,8 +1016,8 @@ Built-ins
 
 The basic concept of a PSyclone Built-in is described in the
 :ref:`built-ins` section.  In the Dynamo 0.3 API, calls to
-Built-ins generally follow a convention that the field/scalar written
-to comes first in the argument list. Dynamo 0.3 Built-ins must conform to the
+built-ins generally follow a convention that the field/scalar written
+to comes last in the argument list. Dynamo 0.3 built-ins must conform to the
 following four rules:
 
  1) Built-in kernels must have one and only one modified (i.e. written
@@ -1138,368 +1028,145 @@ following four rules:
 
  3) Kernel arguments must be either fields or scalars.
 
- 4) All field arguments to a given Built-in must be on the same
-    function space. This is because all current Built-ins iterate over
+ 4) All field arguments to a given built-in must be on the same
+    function space. This is because all current built-ins iterate over
     dofs and therefore all fields should have the same number. It also
     means that we can determine the number of dofs uniquely when a
     scalar is written to.
 
-The Built-ins supported for the Dynamo 0.3 API are listed in the related
-subsections, grouped by the mathematical operation they perform. For clarity,
-the calculation performed by each Built-in is described using Fortran array
-syntax; this does not necessarily reflect the actual implementation of the
-Built-in (*e.g.* it could be implemented by PSyclone generating a call to an
-optimised maths library).
+The built-ins supported for the Dynamo 0.3 API are listed in alphabetical
+order below (apart from increment versions of built-ins which are paired
+with their corresponding non-increment versions). For clarity, the calculation
+performed by each built-in is described using Fortran array syntax; this
+does not necessarily reflect the actual implementation of the
+built-in (*e.g.* it could be implemented by PSyclone
+generating a call to an optimised maths library).
 
-Naming scheme
+axmy
+++++
+
+**axmy** (*a*, *field1*, *field2*, *field3*)
+
+Performs: ::
+   
+  field3(:) = a*field1(:) - field2(:)
+
+where:
+
+* real(r_def), intent(in) :: *a*
+* type(field_type), intent(in) :: *field1*, *field2*
+* type(field_type), intent(out) :: *field3*
+
+axpby
++++++
+
+**axpby** (*a*, *field1*, *b*, *field2*, *field3*)
+
+Performs: ::
+   
+  field3(:) = a*field1(:) + b*field2(:)
+
+where:
+
+* real(r_def), intent(in) :: *a*, *b*
+* type(field_type), intent(in) :: *field1*, *field2*
+* type(field_type), intent(out) :: *field3*
+
+inc_axpby
++++++++++
+
+**inc_axpby** (*a*, *field1*, *b*, *field2*)
+
+Performs: ::
+   
+  field1(:) = a*field1(:) + b*field2(:)
+
+where:
+
+* real(r_def), intent(in) :: *a*, *b*
+* type(field_type), intent(inout) :: *field1*
+* type(field_type), intent(in) :: *field2*
+
+axpy
+++++
+
+**axpy** (*a*, *field1*, *field2*, *field3*)
+
+Performs: ::
+   
+  field3(:) = a*field1(:) + field2(:)
+
+where:
+
+* real(r_def), intent(in) :: *a*
+* type(field_type), intent(in) :: *field1*, *field2*
+* type(field_type), intent(out) :: *field3*
+
+inc_axpy
+++++++++
+
+**inc_axpy** (*a*, *field1*, *field2*)
+
+Performs an AXPY and returns the result as an increment to the first
+field: ::
+   
+  field1(:) = a*field1(:) + field2(:)
+
+where:
+
+* real(r_def), intent(in) :: *a*
+* type(field_type), intent(inout) :: *field1*
+* type(field_type), intent(in) :: *field2*
+
+copy_field
+++++++++++
+
+**copy_field** (*field1*, *field2*)
+
+Copy the values from *field1* into *field2*: ::
+
+  field2(:) = field1(:)
+
+where:
+
+* type(field_type), intent(in) :: *field1*
+* type(field_type), intent(out) :: *field2*
+
+copy_scaled_field
++++++++++++++++++
+
+**copy_scaled_field** (*value*, *field1*, *field2*)
+
+Multiplies a field by a scalar and stores the result in a second field: ::
+  
+  field2(:) = value*field1(:)
+
+where:
+
+* real(r_def), intent(in) :: *value*
+* type(field_type), intent(in) :: *field1*
+* type(field_type), intent(out) :: *field2*
+
+divide_fields
 +++++++++++++
 
-The supported Built-ins in the Dynamo 0.3 API are named according to the
-scheme presented below. Any new Built-in needs to comply with these rules.
+**divide_fields** (*field1*, *field2*, *field3*)
 
-    1) Ordering of arguments in Built-ins calls follows
-       *LHS (result) <- RHS (operation on arguments)*
-       direction, except where a Built-in returns the *LHS* result to one of
-       the *RHS* arguments. In that case ordering of arguments remains as in
-       the *RHS* expression, with the returning *RHS* argument written as close
-       to the *LHS* as it can be without affecting the mathematical expression.
-
-    2) Field names begin with upper case in short form (e.g. **X**, **Y**,
-       **Z**) and any case in long form (e.g. **Field1**, **field**).
-
-    3) Scalar names begin with lower case:  e.g. **a**, **b**, are **scalar1**,
-       **scalar2**. Special names for scalars are: **constant** (or **c**),
-       **innprod** (inner/scalar product of two fields) and **sumfld**
-       (sum of a field).
-
-    4) Arguments in Built-ins variable declarations and constructs (PSyclone
-       Fortran and Python definitions):
-
-       a) Are always  written in long form and lower case (e.g. **field1**,
-	  **field2**, **scalar1**, **scalar2**);
-       b) *LHS* result arguments are always listed first;
-       c) *RHS* arguments are listed in order of appearance in the mathematical
-	  expression, except when one of them is the *LHS* result.
-
-    5) Built-ins names in Fortran consist of:
-
-       1) *RHS* arguments in short form (e.g. **X**, **Y**, **a**, **b**) only;
-       2) Descriptive name of mathematical operation on *RHS* arguments in the
-	  form  ``<operationname>_<RHSarg>`` for one *RHS* argument or
-	  ``<RHSargs>_<operationname>_<RHSargs>`` for more;
-       3) Prefix ``"inc_"`` where the result is returned to one of the *RHS*
-	  arguments (i.e. ``"inc_"<RHSargs>_<operationname>_<RHSargs>``).
-
-    6) Built-ins names in Python definitions are similar to their Fortran
-       counterparts, with a few differences:
-
-       1) Operators and *RHS* arguments are all in upper case (e.g. **X**,
-	  **Y**, **A**, **B**, **Plus**, **Minus**);
-       2) There are no underscores;
-       3) Common prefix is ``"Dyn"``, common suffix is ``"Kern"``.
-
-Addition
-++++++++
-
-Built-ins which add (scaled) fields are denoted with the keyword **plus**.
-
-X_plus_Y
-########
-
-**X_plus_Y** (*field3*, *field1*, *field2*)
-
-
-Sums two fields (Z = X + Y): ::
-  
-  field3(:) = field1(:) + field2(:)
-
-where:
-
-* type(field_type), intent(out) :: *field3*
-* type(field_type), intent(in) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-inc_X_plus_Y
-############
-
-**inc_X_plus_Y** (*field1*, *field2*)
-
-Adds the second field to the first and returns it (X = X + Y): ::
-
-  field1(:) = field1(:) + field2(:)
-
-where:
-
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-aX_plus_Y
-#########
-
-**aX_plus_Y** (*field3*, *scalar*, *field1*, *field2*)
-
-Performs Z = aX + Y: ::
-   
-  field3(:) = scalar*field1(:) + field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(out) :: *field3*
-* type(field_type), intent(in) :: *field1*, *field2*
-
-inc_aX_plus_Y
-#############
-
-**inc_aX_plus_Y** (*scalar*, *field1*, *field2*)
-
-Performs X = aX + Y (increments the first field): ::
-   
-  field1(:) = scalar*field1(:) + field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-inc_X_plus_bY
-#############
-
-**inc_X_plus_bY** (*field1*, *scalar*, *field2*)
-
-Performs X = X + bY (increments the first field): ::
-
-  field1(:) = field1(:) + scalar*field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-aX_plus_bY
-##########
-
-**aX_plus_bY** (*field3*, *scalar1*, *field1*, *scalar2*, *field2*)
-
-Performs Z = aX + bY: ::
-   
-  field3(:) = scalar1*field1(:) + scalar2*field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar1*, *scalar2*
-* type(field_type), intent(out) :: *field3*
-* type(field_type), intent(in) :: *field1*, *field2*
-
-inc_aX_plus_bY
-##############
-
-**inc_aX_plus_bY** (*scalar1*, *field1*, *scalar2*, *field2*)
-
-Performs X = aX + bY (increments the first field): ::
-   
-  field1(:) = scalar1*field1(:) + scalar2*field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar1*, *scalar2*
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-Subtraction
-+++++++++++
-
-Built-ins which subtract (scaled) fields are denoted with the keyword **minus**.
-
-X_minus_Y
-#########
-
-**X_minus_Y** (*field3*, *field1*, *field2*)
-
-Subtracts the second field from the first and stores the result in the 
-third (Z = X - Y): ::
-  
-  field3(:) = field1(:) - field2(:)
-
-where:
-
-* type(field_type), intent(out) :: *field3*
-* type(field_type), intent(in) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-inc_X_minus_Y
-#############
-
-**inc_X_minus_Y** (*field1*, *field2*)
-
-Subtracts the second field from the first and returns it (X = X - Y): ::
-
-  field1(:) = field1(:) - field2(:)
-
-where:
-
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-aX_minus_Y
-##########
-
-**aX_minus_Y** (*field3*, *scalar*, *field1*, *field2*)
-
-Performs Z = aX - Y: ::
-   
-  field3(:) = scalar*field1(:) - field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(out) :: *field3*
-* type(field_type), intent(in) :: *field1*, *field2*
-
-X_minus_bY
-##########
-
-**X_minus_bY** (*field3*, *field1*, *scalar*, *field2*)
-
-Performs Z = X - bY: ::
-
-  field3(:) = field1(:) - scalar*field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(out) :: *field3*
-* type(field_type), intent(in) :: *field1*, *field2*
-
-inc_X_minus_bY
-##############
-
-**inc_X_minus_bY** (*field1*, *scalar*, *field2*)
-
-Performs X = X - bY (increments the first field): ::
-
-  field1(:) = field1(:) - scalar*field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-Multiplication
-++++++++++++++
-
-Built-ins which multiply (scaled) fields are denoted with the keyword **times**.
-
-X_times_Y
-#########
-
-**X_times_Y** (*field3*, *field1*, *field2*)
-
-Multiplies two fields together and returns the result in a third 
-field (Z = X*Y): ::
-
-  field3(:) = field1(:)*field2(:)
-
-where:
-
-* type(field_type), intent(out) :: *field3*
-* type(field_type), intent(in) :: *field1*, *field2*
-
-inc_X_times_Y
-#############
-
-**inc_X_times_Y** (*field1*, *field2*)
-
-Multiplies the first field by the second and returns it (X = X*Y): ::
-
-  field1(:) = field1(:)*field2(:)
-
-where:
-
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-inc_aX_times_Y
-##############
-
-**inc_aX_times_Y** (*scalar*, *field1*, *field2*)
-
-Performs X = a*X*Y (increments the first field): ::
-   
-  field1(:) = scalar*field1(:)*field2(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(inout) :: *field1*
-* type(field_type), intent(in) :: *field2*
-
-Scaling
-+++++++
-
-Built-ins which scale fields are technically cases of multiplying a field by a
-scalar and are hence also denoted with the keyword **times**.
-
-a_times_X
-#########
-
-**a_times_X** (*field2*, *scalar*, *field1*)
-
-Multiplies a field by a scalar and stores the result in a second 
-field (Y = a*X): ::
-  
-  field2(:) = scalar*field1(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(out) :: *field2*
-* type(field_type), intent(in) :: *field1*
-
-inc_a_times_X
-#############
-
-**inc_a_times_X** (*scalar*, *field*)
-
-Multiplies a field by a scalar value and returns the field (X = a*X): ::
-
-  field(:) = scalar*field(:)
-
-where:
-
-* real(r_def), intent(in) :: *scalar*
-* type(field_type), intent(inout) :: *field*
-
-Division
-++++++++
-
-Built-ins which divide (scaled) fields are denoted with the keyword
-**divideby**.
-
-X_divideby_Y
-############
-
-**X_divideby_Y** (*field3*, *field1*, *field2*)
-
-Divides the first field by the second and returns the result in the 
-third (Z = X/Y): ::
+Divides the first field by the second and returns the result in the third: ::
 
   field3(:) = field1(:)/field2(:)
 
 where:
 
-* type(field_type), intent(out) :: *field3*
 * type(field_type), intent(in) :: *field1*, *field2*
+* type(field_type), intent(out) :: *field3*
 
-inc_X_divideby_Y
-################
+inc_divide_field
+++++++++++++++++
 
-**inc_X_divideby_Y** (*field1*, *field2*)
+**inc_divide_field** (*field1*, *field2*)
 
-Divides the first field by the second and returns it (X = X/Y): ::
+Divides the first field by the second and returns it: ::
 
   field1(:) = field1(:)/field2(:)
 
@@ -1508,139 +1175,190 @@ where:
 * type(field_type), intent(inout) :: *field1*
 * type(field_type), intent(in) :: *field2*
 
-Setting to value
+inc_field
++++++++++
+
+**inc_field** (*field1*, *field2*)
+
+Adds the second field to the first and returns it: ::
+
+  field1(:) = field1(:) + field2(:)
+
+where:
+
+* type(field_type), intent(inout) :: *field1*
+* type(field_type), intent(in) :: *field2*
+
+inc_xpby
+++++++++
+
+**inc_xpby** (*field1*, *b*, *field2*)
+
+Performs: ::
+
+  field1(:) = field1(:) + b*field2(:)
+
+where:
+
+* real(r_def), intent(in) :: *b*
+* type(field_type), intent(inout) :: *field1*
+* type(field_type), intent(in) :: *field2*
+
+inner_product
++++++++++++++
+
+**inner_product** (*field1*, *field2*, *sumval*)
+
+Computes the inner product of the fields *field1* and *field2*, *i.e.*: ::
+
+  sumval = SUM(field1(:)*field2(:))
+
+where:
+
+* type(field_type), intent(in) :: *field1*, *field2*
+* real(r_def), intent(out) :: *sumval*
+
+.. note:: When used with distributed memory this built-in will trigger
+          the addition of a global sum which may affect the
+          performance and/or scalability of the code.
+
+inner_self_product
+++++++++++++++++++
+
+**inner_self_product** (*field1*, *sumval*)
+
+Computes the inner product of the field *field1* by itself, *i.e.*: ::
+
+  sumval = SUM(field1(:)*field1(:))
+
+where:
+
+* type(field_type), intent(in) :: *field1*
+* real(r_def), intent(out) :: *sumval*
+
+.. note:: When used with distributed memory this built-in will trigger
+          the addition of a global sum which may affect the
+          performance and/or scalability of the code.
+
+minus_fields
+++++++++++++
+
+**minus_fields** (*field1*, *field2*, *field3*)
+
+Subtracts the second field from the first and stores the result in
+the third. *i.e.* performs the operation: ::
+  
+  field3(:) = field1(:) - field2(:)
+
+where:
+
+* type(field_type), intent(in) :: *field1*
+* type(field_type), intent(in) :: *field2*
+* type(field_type), intent(out) :: *field3*
+
+multiply_fields
++++++++++++++++
+
+**multiply_fields** (*field1*, *field2*, *field3*)
+
+Multiplies two fields together and returns the result in a third field: ::
+
+  field3(:) = field1(:)*field2(:)
+
+where:
+
+* type(field_type), intent(in) :: *field1*, *field2*
+* type(field_type), intent(out) :: *field3*
+
+inc_multiply_field
+++++++++++++++++++
+
+**inc_multiply_field** (*field1*, *field2*)
+
+Multiplies the first field by the second and returns it: ::
+
+  field1(:) = field1(:)*field2(:)
+
+where:
+
+* type(field_type), intent(inout) :: *field1*
+* type(field_type), intent(in) :: *field2*
+
+plus_fields
++++++++++++
+
+**plus_fields** (*field1*, *field2*, *field3*)
+
+Sums two fields: ::
+  
+  field3(:) = field1(:) + field2(:)
+
+where:
+
+* type(field_type), intent(in) :: *field1*
+* type(field_type), intent(in) :: *field2*
+* type(field_type), intent(out) :: *field3*
+
+raise_field
++++++++++++
+
+**raise_field** (*field1*, *scalar*)
+
+Raises a field to a scalar value and returns the field: ::
+
+  field1(:) = field1(:)**scalar
+
+where:
+
+* type(field_type), intent(inout) :: *field1*
+* real(r_def), intent(in) :: *scalar*
+
+scale_field
++++++++++++
+
+**scale_field** (*scalar*, *field1*)
+
+Multiplies a field by a scalar value and returns the field: ::
+
+  field1(:) = scalar*field1(:)
+
+where:
+
+* real(r_def), intent(in) :: *scalar*
+* type(field_type), intent(inout) :: *field1*
+
+set_field_scalar
 ++++++++++++++++
 
-Built-ins which set field elements to some value and hence are denoted with
-the keyword **setval**.
+**set_field_scalar** (*value*, *field*)
 
-setval_c
-########
+Sets all elements of the field *field* to the value *value*: ::
 
-**setval_c** (*field*, *constant*)
-
-Sets all elements of the field *field* to the value *constant* (X = c): ::
-
-  field(:) = constant
+  field1(:) = value
 
 where:
 
 * type(field_type), intent(out) :: *field*
-* real(r_def), intent(in) :: *constant*
+* real(r_def), intent(in) :: *value*
 
 .. note:: The field may be on any function space.
 
-setval_X
-########
+sum_field
++++++++++
 
-**setval_X** (*field2*, *field1*)
-
-Sets a field *field2* equal to field *field1* (Y = X): ::
-
-  field2(:) = field1(:)
-
-where:
-
-* type(field_type), intent(out) :: *field2*
-* type(field_type), intent(in) :: *field1*
-
-Raising to power
-++++++++++++++++
-
-Built-ins which raise field elements to an exponent are denoted with the
-keyword **powreal** for real exponent or **powint** for integer exponent.
-
-inc_X_powreal_a
-###############
-
-**inc_X_powreal_a** (*field*, *rscalar*)
-
-Raises a field to a real scalar value and returns the field (X = X**a): ::
-
-  field(:) = field(:)**rscalar
-
-where:
-
-* type(field_type), intent(inout) :: *field*
-* real(r_def), intent(in) :: *rscalar*
-
-inc_X_powint_n
-##############
-
-**inc_X_powint_n** (*field*, *iscalar*)
-
-Raises a field to an integer scalar value and returns the field (X = X**n): ::
-
-  field(:) = field(:)**iscalar
-
-where:
-
-* type(field_type), intent(inout) :: *field*
-* integer(i_def), intent(in) :: *iscalar*
-
-Inner product
-+++++++++++++
-
-Built-ins which calculate the inner product of two fields or of a field with itself
-are denoted with the keyword **innerproduct**.
-
-X_innerproduct_Y
-################
-
-**X_innerproduct_Y** (*innprod*, *field1*, *field2*)
-
-Computes the inner product of the fields *field1* and *field2*, *i.e.*: ::
-
-  innprod = SUM(field1(:)*field2(:))
-
-where:
-
-* real(r_def), intent(out) :: *innprod*
-* type(field_type), intent(in) :: *field1*, *field2*
-
-.. note:: When used with distributed memory this Built-in will trigger
-          the addition of a global sum which may affect the
-          performance and/or scalability of the code.
-
-X_innerproduct_X
-################
-
-**X_innerproduct_X** (*innprod*, *field*)
-
-Computes the inner product of the field *field1* by itself, *i.e.*: ::
-
-  innprod = SUM(field(:)*field(:))
-
-where:
-
-* real(r_def), intent(out) :: *innprod*
-* type(field_type), intent(in) :: *field*
-
-.. note:: When used with distributed memory this Built-in will trigger
-          the addition of a global sum which may affect the
-          performance and/or scalability of the code.
-
-Sum of elements
-+++++++++++++++
-
-Built-in which sums the elements of a field is denoted with the keyword *sum*.
-
-sum_X
-#####
-
-**sum_X** (*sumfld*, *field*)
+**sum_field** (*field*, *sumval*)
 
 Sums all of the elements of the field *field* and returns the result
-in the scalar variable *sumfld*: ::
+in the scalar variable *sumval*: ::
   
-  sumfld = SUM(field(:))
+  sumval = SUM(field(:))
 
 where:
 
-* real(r_def), intent(out) :: sumfld
 * type(field_type), intent(in) :: field
+* real(r_def), intent(out) :: sumval
 
-.. note:: When used with distributed memory this Built-in will trigger
+.. note:: When used with distributed memory this built-in will trigger
           the addition of a global sum which may affect the
           performance and/or scalability of the code.
 
@@ -1702,13 +1420,12 @@ Transformations
 ---------------
 
 This section describes the dynamo-api-specific transformations. In all
-cases, excepting **Dynamo0p3RedundantComputationTrans**, these
-transformations are specialisations of generic transformations
-described in the :ref:`transformations` section. The difference
-between these transformations and the generic ones is that these
-perform dynamo-api-specific checks to make sure the transformations
-are valid. In practice these transformations perform the required
-checks then call the generic ones internally.
+cases these transformations are specialisations of generic
+transformations described in the :ref:`transformations` section. The
+difference between these transformations and the generic ones are that
+these perform dynamo-api-specific checks to make sure the
+transformations are valid. In practice these transformations perform
+the required checks then call the generic ones internally.
 
 The use of the dynamo-api-specific transformations is exactly the same
 as the equivalent generic ones in all cases excepting
@@ -1723,10 +1440,6 @@ allow loop fusion if it does not know the spaces are the same. The
 the spaces are the same. This option should therefore be used with
 caution. Note, if PSyclone knows the spaces are different this option
 has no effect and the transformation will always raise an exception.
-
-The **Dynamo0p3RedundantComputationTrans** transformation is only valid
-for the "Dynamo0p3" API. This is because this API is currently the
-only one that supports distributed memory.
 
 The Dynamo-specific transformations currently available are given
 below. If the name of a transformation includes "Dynamo0p3" it means
@@ -1747,9 +1460,5 @@ all versions of the Dynamo API.
     :noindex:
 
 .. autoclass:: psyclone.transformations.Dynamo0p3ColourTrans
-    :members:
-    :noindex:
-
-.. autoclass:: psyclone.transformations.Dynamo0p3RedundantComputationTrans
     :members:
     :noindex:

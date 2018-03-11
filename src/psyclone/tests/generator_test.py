@@ -12,7 +12,6 @@ the generator.py file. This includes the generate and the main
 functions.
 '''
 
-from __future__ import absolute_import
 import os
 import tempfile
 import pytest
@@ -68,7 +67,7 @@ def test_wrong_kernel_path():
         code cannot be found in the specified search path '''
     with pytest.raises(IOError):
         generate(os.path.join(BASE_PATH, "dynamo0p3",
-                              "1.1.0_single_invoke_xyoz_qr.f90"),
+                              "1.1_single_invoke_qr.f90"),
                  api="dynamo0.3",
                  kernel_path=os.path.join(BASE_PATH, "gocean0p1"))
 
@@ -281,6 +280,10 @@ def test_script_trans():
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     invoke = psy.invokes.get("invoke_0")
     schedule = invoke.schedule
+    # remove unecessary halos between loops. At the moment we have no
+    # intra halo analysis so we add them before all loops just in
+    # case.
+    del schedule.children[4:7]
     loop1 = schedule.children[3]
     loop2 = schedule.children[4]
     trans = LoopFuseTrans()
@@ -349,7 +352,7 @@ def test_continuators():
        do not cause an error '''
     _, _ = generate(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "test_files", "dynamo0p3",
-                                 "1.1.0_single_invoke_xyoz_qr.f90"),
+                                 "1.1_single_invoke_qr.f90"),
                     api="dynamo0.3", line_length=True)
 
 

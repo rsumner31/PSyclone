@@ -12,10 +12,10 @@ program vector_field
   use testkern_chi, only: testkern_chi_type
   use inf,      only: field_type
   implicit none
-  type(field_type) :: f1, chi(3), f2
+  type(field_type) :: f1, chi(3)
 
-  call invoke(                        &
-       testkern_chi_type(f1,chi,f2)   &
+  call invoke(                     &
+       testkern_chi_type(f1,chi)   &
        )
 
 end program vector_field

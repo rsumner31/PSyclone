@@ -35,37 +35,15 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Author R. W. Ford STFC Daresbury Lab
-# -----------------------------------------------------------------------------
+# Author R. Ford STFC Daresbury Lab
 
 ''' This module provides generic support for PSyclone's PSy code optimisation
     and generation. The classes in this method need to be specialised for a
     particular API and implementation. '''
 
 import abc
-from psyclone import config
-
-# We use the termcolor module (if available) to enable us to produce
-# coloured, textual representations of Invoke schedules. If it's not
-# available then we don't use colour.
-try:
-    from termcolor import colored
-except ImportError:
-    # We don't have the termcolor package available so provide
-    # alternative routine
-    def colored(text, _):
-        '''
-        Returns the supplied text argument unchanged. This is a swap-in
-        replacement for when termcolor.colored is not available.
-
-        :param text: Text to return
-        :type text: string
-        :param _: Fake argument, only required to match interface
-                  provided by termcolor.colored
-        :return: The supplied text, unchanged
-        :rtype: string
-        '''
-        return text
+import psyclone
+import config
 
 # The types of 'intent' that an argument to a Fortran subroutine
 # may have
@@ -96,17 +74,6 @@ VALID_ARG_TYPE_NAMES = []
 # List of all valid access types for a kernel argument
 VALID_ACCESS_DESCRIPTOR_NAMES = []
 
-# Colour map to use when writing Invoke schedule to terminal. (Requires
-# that the termcolor package be installed. If it isn't then output is not
-# coloured.) See https://pypi.python.org/pypi/termcolor for details.
-SCHEDULE_COLOUR_MAP = {"Schedule": "yellow",
-                       "Loop": "white",
-                       "GlobalSum": "cyan",
-                       "Directive": "green",
-                       "HaloExchange": "blue",
-                       "Call": "red",
-                       "KernCall": "magenta"}
-
 
 def get_api(api):
     ''' If no API is specified then return the default. Otherwise, check that
@@ -128,7 +95,7 @@ def zero_reduction_variables(red_call_list, parent):
     '''zero all reduction variables associated with the calls in the call
     list'''
     if red_call_list:
-        from psyclone.f2pygen import CommentGen
+        from f2pygen import CommentGen
         parent.add(CommentGen(parent, ""))
         parent.add(CommentGen(parent, " Zero summation variables"))
         parent.add(CommentGen(parent, ""))
@@ -201,19 +168,19 @@ class PSyFactory(object):
     def create(self, invoke_info):
         ''' Return the specified version of PSy. '''
         if self._type == "gunghoproto":
-            from psyclone.ghproto import GHProtoPSy
+            from ghproto import GHProtoPSy
             return GHProtoPSy(invoke_info)
         elif self._type == "dynamo0.1":
-            from psyclone.dynamo0p1 import DynamoPSy
+            from dynamo0p1 import DynamoPSy
             return DynamoPSy(invoke_info)
         elif self._type == "dynamo0.3":
-            from psyclone.dynamo0p3 import DynamoPSy
+            from dynamo0p3 import DynamoPSy
             return DynamoPSy(invoke_info)
         elif self._type == "gocean0.1":
-            from psyclone.gocean0p1 import GOPSy
+            from gocean0p1 import GOPSy
             return GOPSy(invoke_info)
         elif self._type == "gocean1.0":
-            from psyclone.gocean1p0 import GOPSy
+            from gocean1p0 import GOPSy
             return GOPSy(invoke_info)
         else:
             raise GenerationError("PSyFactory: Internal Error: Unsupported "
@@ -235,10 +202,9 @@ class PSy(object):
 
         For example:
 
-        >>> import psyclone
-        >>> from psyclone.parse import parse
+        >>> from parse import parse
         >>> ast, info = parse("argspec.F90")
-        >>> from psyclone.psyGen import PSyFactory
+        >>> from psyGen import PSyFactory
         >>> api = "..."
         >>> psy = PSyFactory(api).create(info)
         >>> print(psy.gen)
@@ -248,6 +214,7 @@ class PSy(object):
 
         self._name = invoke_info.name
         self._invokes = None
+        self._psy_module = None
 
     def __str__(self):
         return "PSy"
@@ -264,6 +231,11 @@ class PSy(object):
     def gen(self):
         raise NotImplementedError("Error: PSy.gen() must be implemented "
                                   "by subclass")
+
+    @property
+    def psy_module(self):
+        raise NotImplementedError("PSy.psy_module must be implemented by "
+                                  "subclass")
 
     def inline(self, module):
         ''' inline all kernel subroutines into the module that are marked for
@@ -415,28 +387,10 @@ class Invoke(object):
     ''' Manage an individual invoke call '''
 
     def __str__(self):
-        return self._name+"("+", ".join([str(arg) for arg in
-                                         self._alg_unique_args])+")"
+        return self._name+"("+str(self.unique_args)+")"
 
     def __init__(self, alg_invocation, idx, schedule_class,
                  reserved_names=None):
-        '''Constructs an invoke object. Parameters:
-
-        :param alg_invocation:
-        :type alg_invocation:
-        :param idx: Position/index of this invoke call in the subroutine.
-            If not None, this number is added to the name ("invoke_").
-        :type idx: Integer.
-        :param schedule_class: The schedule class to create for this invoke.
-        :type schedule_class: Schedule class.
-        :param reserved_names: Optional argument: list of reserved names,
-               i.e. names that should not be used e.g. as psyclone created
-               variable name.
-        :type reserved_names: List of strings.
-        '''
-
-        self._name = "invoke"
-        self._alg_unique_args = []
 
         if alg_invocation is None and idx is None:
             return
@@ -640,13 +594,13 @@ class Invoke(object):
         return declns
 
     def gen(self):
-        from psyclone.f2pygen import ModuleGen
+        from f2pygen import ModuleGen
         module = ModuleGen("container")
         self.gen_code(module)
         return module.root
 
     def gen_code(self, parent):
-        from psyclone.f2pygen import SubroutineGen, TypeDeclGen, DeclGen, \
+        from f2pygen import SubroutineGen, TypeDeclGen, DeclGen, \
             SelectionGen, AssignGen
         # create the subroutine
         invoke_sub = SubroutineGen(parent, name=self.name,
@@ -1098,37 +1052,6 @@ class Node(object):
         ''' return all calls that are descendents of this node '''
         return self.walk(self.children, Call)
 
-    def following(self):
-        '''Return all :py:class:`psyclone.psyGen.Node` nodes after me in the
-        schedule. Ordering is depth first.
-
-        :return: a list of nodes
-        :rtype: :func:`list` of :py:class:`psyclone.psyGen.Node`
-
-        '''
-        all_nodes = self.walk(self.root.children, Node)
-        position = all_nodes.index(self)
-        return all_nodes[position+1:]
-
-    def preceding(self, reverse=None):
-        '''Return all :py:class:`psyclone.psyGen.Node` nodes before me in the
-        schedule. Ordering is depth first. If the `reverse` argument
-        is set to `True` then the node ordering is reversed
-        i.e. returning the nodes closest to me first
-
-        :param: reverse: An optional, default `False`, boolean flag
-        :type: reverse: bool
-        :return: A list of nodes
-        :rtype: :func:`list` of :py:class:`psyclone.psyGen.Node`
-
-        '''
-        all_nodes = self.walk(self.root.children, Node)
-        position = all_nodes.index(self)
-        nodes = all_nodes[:position]
-        if reverse:
-            nodes.reverse()
-        return nodes
-
     @property
     def following_calls(self):
         ''' return all calls after me in the schedule '''
@@ -1231,7 +1154,7 @@ class Schedule(Node):
         # and calls so that we can perform optimisations separately on the
         # two entities.
         sequence = []
-        from psyclone.parse import BuiltInCall
+        from parse import BuiltInCall
         for call in alg_calls:
             if isinstance(call, BuiltInCall):
                 sequence.append(BuiltInFactory.create(call, parent=self))
@@ -1241,28 +1164,10 @@ class Schedule(Node):
         self._invoke = None
 
     def view(self, indent=0):
-        '''
-        Print a text representation of this node to stdout and then
-        call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
-        print self.indent(indent) + self.coloured_text + \
-            "[invoke='" + self.invoke.name + "']"
+        print self.indent(indent) + "Schedule[invoke='" + self.invoke.name + \
+            "']"
         for entity in self._children:
             entity.view(indent=indent + 1)
-
-    @property
-    def coloured_text(self):
-        '''
-        Returns the name of this node with appropriate control codes
-        to generate coloured output in a terminal that supports it.
-
-        :return: Text containing the name of this node, possibly coloured
-        :rtype: string
-        '''
-        return colored("Schedule", SCHEDULE_COLOUR_MAP["Schedule"])
 
     def __str__(self):
         result = "Schedule:\n"
@@ -1279,27 +1184,9 @@ class Schedule(Node):
 class Directive(Node):
 
     def view(self, indent=0):
-        '''
-        Print a text representation of this node to stdout and then
-        call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
-        print self.indent(indent) + self.coloured_text
+        print self.indent(indent) + "Directive"
         for entity in self._children:
             entity.view(indent=indent + 1)
-
-    @property
-    def coloured_text(self):
-        '''
-        Returns a string containing the name of this element with
-        control codes for colouring in terminals that support it.
-
-        :return: Text containing the name of this node, possibly coloured
-        :rtype: string
-        '''
-        return colored("Directive", SCHEDULE_COLOUR_MAP["Directive"])
 
     @property
     def dag_name(self):
@@ -1315,14 +1202,7 @@ class OMPDirective(Directive):
         return "OMP_directive_" + str(self.abs_position)
 
     def view(self, indent=0):
-        '''
-        Print a text representation of this node to stdout and then
-        call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
-        print self.indent(indent) + self.coloured_text + "[OMP]"
+        print self.indent(indent) + "Directive[OMP]"
         for entity in self._children:
             entity.view(indent=indent + 1)
 
@@ -1348,22 +1228,15 @@ class OMPParallelDirective(OMPDirective):
         return "OMP_parallel_" + str(self.abs_position)
 
     def view(self, indent=0):
-        '''
-        Print a text representation of this node to stdout and then
-        call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
-        print self.indent(indent) + self.coloured_text + "[OMP parallel]"
+        print self.indent(indent)+"Directive[OMP parallel]"
         for entity in self._children:
             entity.view(indent=indent + 1)
 
     def gen_code(self, parent):
         '''Generate the fortran OMP Parallel Directive and any associated
         code'''
-        from psyclone.f2pygen import DirectiveGen, AssignGen, UseGen, \
-            CommentGen, DeclGen
+        from f2pygen import DirectiveGen, AssignGen, UseGen, CommentGen, \
+            DeclGen
 
         private_list = self._get_private_list()
 
@@ -1508,19 +1381,13 @@ class OMPDoDirective(OMPDirective):
         return "OMP_do_" + str(self.abs_position)
 
     def view(self, indent=0):
-        '''
-        Write out a textual summary of the OpenMP Do Directive and then
-        call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
+        ''' Write out a textual summary of the OpenMP Do Directive '''
         if self.reductions():
             reprod = "[reprod={0}]".format(self._reprod)
         else:
             reprod = ""
-        print self.indent(indent) + self.coloured_text + \
-            "[OMP do]{0}".format(reprod)
+        print self.indent(indent) + \
+            "Directive[OMP do]{0}".format(reprod)
 
         for entity in self._children:
             entity.view(indent=indent + 1)
@@ -1541,7 +1408,7 @@ class OMPDoDirective(OMPDirective):
         return self._reprod
 
     def gen_code(self, parent):
-        from psyclone.f2pygen import DirectiveGen
+        from f2pygen import DirectiveGen
 
         # It is only at the point of code generation that
         # we can check for correctness (given that we don't
@@ -1604,20 +1471,14 @@ class OMPParallelDoDirective(OMPParallelDirective, OMPDoDirective):
         return "OMP_parallel_do_" + str(self.abs_position)
 
     def view(self, indent=0):
-        '''
-        Write out a textual summary of the OpenMP Parallel Do Directive
-        and then call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
-        print self.indent(indent) + self.coloured_text + \
-            "[OMP parallel do]"
+        ''' Write out a textual summary of the OpenMP Parallel Do Directive '''
+        print self.indent(indent) + \
+            "Directive[OMP parallel do]"
         for entity in self._children:
             entity.view(indent=indent + 1)
 
     def gen_code(self, parent):
-        from psyclone.f2pygen import DirectiveGen
+        from f2pygen import DirectiveGen
 
         # We're not doing nested parallelism so make sure that this
         # omp parallel do is not already within some parallel region
@@ -1671,50 +1532,17 @@ class GlobalSum(Node):
         return [self._scalar]
 
     def view(self, indent):
-        '''
-        Print text describing this object to stdout and then
-        call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
+        ''' Class specific view  '''
         print self.indent(indent) + (
-            "{0}[scalar='{1}']".format(self.coloured_text, self._scalar.name))
-
-    @property
-    def coloured_text(self):
-        '''
-        Return a string containing the (coloured) name of this node
-        type
-
-        :return: A string containing the name of this node, possibly with
-                 control codes for colour
-        :rtype: string
-        '''
-        return colored("GlobalSum", SCHEDULE_COLOUR_MAP["GlobalSum"])
+            "GlobalSum[scalar='{0}']".format(self._scalar.name))
 
 
 class HaloExchange(Node):
 
-    '''Generic Halo Exchange class which can be added to and
-    manipulated in, a schedule.
+    ''' Generic Halo Exchange class which can be added to and
+    manipulated in, a schedule. '''
 
-    :param field: the field that this halo exchange will act on
-    :type field: :py:class:`psyclone.dynamo0p3.DynKernelArgument`
-    :param check_dirty: optional argument default True indicating
-    whether this halo exchange should be subject to a run-time check
-    for clean/dirty halos.
-    :type check_dirty: bool
-    :param vector_index: optional vector index (default None) to
-    identify which index of a vector field this halo exchange is
-    responsible for
-    :type vector_index: int
-    :param parent: optional parent (default None) of this object
-    :type parent: :py:class:`psyclone.psyGen.node`
-
-    '''
-    def __init__(self, field, check_dirty=True,
-                 vector_index=None, parent=None):
+    def __init__(self, field, halo_type, halo_depth, check_dirty, parent=None):
         Node.__init__(self, children=[], parent=parent)
         import copy
         self._field = copy.copy(field)
@@ -1723,26 +1551,12 @@ class HaloExchange(Node):
             # HACK:TODO: update mapping to readwrite when it is supported
             self._field.access = MAPPING_ACCESSES["inc"]
             self._field.call = self
-        self._halo_type = None
-        self._halo_depth = None
+        self._halo_type = halo_type
+        if halo_depth:
+            self._halo_depth = halo_depth
+        else:
+            self._halo_depth = "unknown"
         self._check_dirty = check_dirty
-        self._vector_index = vector_index
-
-    @property
-    def vector_index(self):
-        '''If the field is a vector then return the vector index associated
-        with this halo exchange. Otherwise return None'''
-        return self._vector_index
-
-    @property
-    def halo_depth(self):
-        ''' Return the depth of the halo exchange '''
-        return self._halo_depth
-
-    @halo_depth.setter
-    def halo_depth(self, value):
-        ''' Set the depth of the halo exchange '''
-        self._halo_depth = value
 
     @property
     def field(self):
@@ -1764,91 +1578,12 @@ class HaloExchange(Node):
         base method and simply return our argument. '''
         return [self._field]
 
-    def check_vector_halos_differ(self, node):
-        '''helper method which checks that two halo exchange nodes (one being
-        self and the other being passed by argument) operating on the
-        same field, both have vector fields of the same size and use
-        different vector indices. If this is the case then the halo
-        exchange nodes do not depend on each other. If this is not the
-        case then an internal error will have occured and we raise an
-        appropriate exception.
-
-        :param node: a halo exchange which should exchange the same
-        field as self
-        :type node: :py:class:`psyclone.psyGen.HaloExchange`
-        :raises GenerationError: if the argument passed is not a halo exchange
-        :raises GenerationError: if the field name in the halo
-        exchange passed in has a different name to the field in this
-        halo exchange
-        :raises GenerationError: if the field in this halo exchange is
-        not a vector field
-        :raises GenerationError: if the vector size of the field in
-        this halo exchange is different to vector size of the field in
-        the halo exchange passed by argument.
-        :raises GenerationError: if the vector index of the field in
-        this halo exchange is the same as the vector index of the
-        field in the halo exchange passed by argument.
-
-        '''
-
-        if not isinstance(node, HaloExchange):
-            raise GenerationError(
-                "Internal error, the argument passed to "
-                "HaloExchange.check_vector_halos_differ() is not "
-                "a halo exchange object")
-
-        if self.field.name != node.field.name:
-            raise GenerationError(
-                "Internal error, the halo exchange object passed to "
-                "HaloExchange.check_vector_halos_differ() has a different "
-                "field name '{0}' to self "
-                "'{1}'".format(node.field.name, self.field.name))
-
-        if self.field.vector_size <= 1:
-            raise GenerationError(
-                "Internal error, HaloExchange.check_vector_halos_differ() "
-                "a halo exchange depends on another halo "
-                "exchange but the vector size of field '{0}' is 1".
-                format(self.field.name))
-
-        if self.field.vector_size != node.field.vector_size:
-            raise GenerationError(
-                "Internal error, HaloExchange.check_vector_halos_differ() "
-                "a halo exchange depends on another halo "
-                "exchange but the vector sizes for field '{0}' differ".
-                format(self.field.name))
-
-        if self.vector_index == \
-           node.vector_index:
-            raise GenerationError(
-                "Internal error, HaloExchange.check_vector_halos_differ() "
-                "a halo exchange depends on another halo "
-                "exchange but both vector id's ('{0}') of field '{1}' are "
-                "the same".format(self.vector_index, self.field.name))
-
-    def view(self, indent=0):
-        '''
-        Write out a textual summary of the OpenMP Parallel Do Directive
-        and then call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
+    def view(self, indent):
+        ''' Class specific view  '''
         print self.indent(indent) + (
-            "{0}[field='{1}', type='{2}', depth={3}, "
-            "check_dirty={4}]".format(self.coloured_text, self._field.name,
-                                      self._halo_type,
+            "HaloExchange[field='{0}', type='{1}', depth={2}, "
+            "check_dirty={3}]".format(self._field.name, self._halo_type,
                                       self._halo_depth, self._check_dirty))
-
-    @property
-    def coloured_text(self):
-        '''
-        Return a string containing the (coloured) name of this node type
-
-        :return: Name of this node type, possibly with colour control codes
-        :rtype: string
-        '''
-        return colored("HaloExchange", SCHEDULE_COLOUR_MAP["HaloExchange"])
 
 
 class Loop(Node):
@@ -1907,30 +1642,11 @@ class Loop(Node):
         self._canvas = None
 
     def view(self, indent=0):
-        '''
-        Write out a textual summary of this Loop node to stdout
-        and then call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
-        print self.indent(indent) + self.coloured_text + \
-            "[type='{0}',field_space='{1}',it_space='{2}']".\
+        print self.indent(indent) +\
+            "Loop[type='{0}',field_space='{1}',it_space='{2}']".\
             format(self._loop_type, self._field_space, self.iteration_space)
         for entity in self._children:
             entity.view(indent=indent + 1)
-
-    @property
-    def coloured_text(self):
-        '''
-        Returns a string containing the name of this node along with
-        control characters for colouring in terminals that support it.
-
-        :return: The name of this node, possibly with control codes for
-                 colouring
-        :rtype: string
-        '''
-        return colored("Loop", SCHEDULE_COLOUR_MAP["Loop"])
 
     @property
     def height(self):
@@ -2068,7 +1784,7 @@ class Loop(Node):
             for child in self.children:
                 child.gen_code(parent)
         else:
-            from psyclone.f2pygen import DoGen, DeclGen
+            from f2pygen import DoGen, DeclGen
             do = DoGen(parent, self._variable_name, self._start, self._stop)
             # need to add do loop before children as children may want to add
             # info outside of do loop
@@ -2089,23 +1805,10 @@ class Call(Node):
         return self.arguments.args
 
     def view(self, indent=0):
-        '''
-        Write out a textual summary of this Call node to stdout
-        and then call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
-        print self.indent(indent) + self.coloured_text, \
-            self.name + "(" + str(self.arguments.raw_arg_list) + ")"
+        print self.indent(indent)+"Call", \
+            self.name+"("+str(self.arguments.raw_arg_list)+")"
         for entity in self._children:
             entity.view(indent=indent + 1)
-
-    @property
-    def coloured_text(self):
-        ''' Return a string containing the (coloured) name of this node
-        type '''
-        return colored("Call", SCHEDULE_COLOUR_MAP["Call"])
 
     @property
     def width(self):
@@ -2217,7 +1920,7 @@ class Call(Node):
         '''Generate code to zero the reduction variable and to zero the local
         reduction variable if one exists. The latter is used for reproducible
         reductions, if specified.'''
-        from psyclone.f2pygen import AssignGen, DeclGen, AllocateGen
+        from f2pygen import AssignGen, DeclGen, AllocateGen
         if not position:
             position = ["auto"]
         var_name = self._reduction_arg.name
@@ -2259,7 +1962,7 @@ class Call(Node):
     def reduction_sum_loop(self, parent):
         '''generate the appropriate code to place after the end parallel
         region'''
-        from psyclone.f2pygen import DoGen, AssignGen, DeallocateGen
+        from f2pygen import DoGen, AssignGen, DeallocateGen
         self._name_space_manager = NameSpaceFactory().create()
         thread_idx = self._name_space_manager.create_name(
             root_name="th_idx", context="PSyVars", label="thread_index")
@@ -2353,14 +2056,6 @@ class Kern(Call):
         return "kern call: "+self._name
 
     @property
-    def module_name(self):
-        '''
-        :return: The name of the Fortran module that contains this kernel
-        :rtype: string
-        '''
-        return self._module_name
-
-    @property
     def dag_name(self):
         ''' Return the name to use in a dag for this node'''
         return "kernel_{0}_{1}".format(self.name, str(self.abs_position))
@@ -2382,32 +2077,14 @@ class Kern(Call):
                 kernel._module_inline = value
 
     def view(self, indent=0):
-        '''
-        Write out a textual summary of this Kernel-call node to stdout
-        and then call the view() method of any children.
-
-        :param indent: Depth of indent for output text
-        :type indent: integer
-        '''
-        print self.indent(indent) + self.coloured_text, \
+        print self.indent(indent) + "KernCall", \
             self.name + "(" + str(self.arguments.raw_arg_list) + ")", \
             "[module_inline=" + str(self._module_inline) + "]"
         for entity in self._children:
             entity.view(indent=indent + 1)
 
-    @property
-    def coloured_text(self):
-        '''
-        Return text containing the (coloured) name of this node type
-
-        :return: the name of this node type, possibly with control codes
-                 for colour
-        :rtype: string
-        '''
-        return colored("KernCall", SCHEDULE_COLOUR_MAP["KernCall"])
-
     def gen_code(self, parent):
-        from psyclone.f2pygen import CallGen, UseGen
+        from f2pygen import CallGen, UseGen
         parent.add(CallGen(parent, self._name, self._arguments.arglist))
         parent.add(UseGen(parent, name=self._module_name, only=True,
                           funcnames=[self._name]))
@@ -2508,20 +2185,7 @@ class Arguments(object):
 
 class Argument(object):
     ''' argument base class '''
-
     def __init__(self, call, arg_info, access):
-        '''
-        :param call: the call that this argument is associated with
-        :type call: :py:class:`psyclone.psyGen.Call`
-        :param arg_info: Information about this argument collected by
-        the parser
-        :type arg_info: :py:class:`psyclone.parse.Arg`
-        :param access: the way in which this argument is accessed in
-        the 'Call'. Valid values are specified in 'MAPPING_ACCESSES'
-        (and may be modified by the particular API).
-        :type access: str
-
-        '''
         self._call = call
         self._text = arg_info.text
         self._orig_name = arg_info.varName
@@ -2541,20 +2205,11 @@ class Argument(object):
             # previous name.
             self._name = self._name_space_manager.create_name(
                 root_name=self._orig_name, context="AlgArgs", label=self._text)
-        # _writers and _readers need to be instances of this class,
-        # rather than static variables, as the mapping that is used
-        # depends on the API and this is only known when a subclass of
-        # Argument is created (as the local MAPPING_ACCESSES will be
-        # used). For example, a dynamo0p3 api instantiation of a
-        # DynArgument (subclass of Argument) will use the
-        # MAPPING_ACCESSES specified in the dynamo0p3 file which
-        # overide the default ones in this file.
-        self._write_access_types = [MAPPING_ACCESSES["write"],
-                                    MAPPING_ACCESSES["inc"],
-                                    MAPPING_REDUCTIONS["sum"]]
-        self._read_access_types = [MAPPING_ACCESSES["read"],
-                                   MAPPING_ACCESSES["inc"]]
-        self._vector_size = 1
+        # forward and backward dependence values
+        self._bd_computed = False
+        self._bd_value = None
+        self._fd_computed = False
+        self._fd_value = None
 
     def __str__(self):
         return self._name
@@ -2605,188 +2260,41 @@ class Argument(object):
     def backward_dependence(self):
         '''Returns the preceding argument that this argument has a direct
         dependence with, or None if there is not one. The argument may
-        exist in a call, a haloexchange, or a globalsum.
-
-        :return: the first preceding argument this argument has a
-        dependence with
-        :rtype: :py:class:`psyclone.psyGen.Argument`
-
-        '''
-        nodes = self._call.preceding(reverse=True)
-        return self._find_argument(nodes)
-
-    def backward_write_dependencies(self, ignore_halos=False):
-        '''Returns a list of previous write arguments that this argument has
-        dependencies with. The arguments may exist in a call, a
-        haloexchange (unless `ignore_halos` is `True`), or a globalsum. If
-        none are found then return an empty list. If self is not a
-        reader then return an empty list.
-
-        :param: ignore_halos: An optional, default `False`, boolean flag
-        :type: ignore_halos: bool
-        :return: a list of arguments that this argument has a dependence with
-        :rtype: :func:`list` of :py:class:`psyclone.psyGen.Argument`
-
-        '''
-        nodes = self._call.preceding(reverse=True)
-        results = self._find_write_arguments(nodes, ignore_halos=ignore_halos)
-        return results
+        exist in a call, a haloexchange, or a globalsum. For performance
+        reasons only compute once then store the result. '''
+        if not self._bd_computed:
+            self._bd_computed = True
+            all_nodes = self._call.walk(self._call.root.children, Node)
+            position = all_nodes.index(self._call)
+            all_prev_nodes = all_nodes[:position]
+            all_prev_nodes.reverse()
+            self._bd_value = self._find_argument(all_prev_nodes)
+        return self._bd_value
 
     def forward_dependence(self):
         '''Returns the following argument that this argument has a direct
-        dependence with, or `None` if there is not one. The argument may
-        exist in a call, a haloexchange, or a globalsum.
-
-        :return: the first following argument this argument has a
-        dependence with
-        :rtype: :py:class:`psyclone.psyGen.Argument`
-
-        '''
-        nodes = self._call.following()
-        return self._find_argument(nodes)
-
-    def forward_read_dependencies(self):
-        '''Returns a list of following read arguments that this argument has
-        dependencies with. The arguments may exist in a call, a
-        haloexchange, or a globalsum. If none are found then
-        return an empty list. If self is not a writer then return an
-        empty list.
-
-        :return: a list of arguments that this argument has a dependence with
-        :rtype: :func:`list` of :py:class:`psyclone.psyGen.Argument`
-
-        '''
-        nodes = self._call.following()
-        return self._find_read_arguments(nodes)
+        dependence with, or None if there is not one. The argument may
+        exist in a call, a haloexchange, or a globalsum. For performance
+        reasons only compute once, then store the result.'''
+        if not self._fd_computed:
+            self._fd_computed = True
+            all_nodes = self._call.walk(self._call.root.children, Node)
+            position = all_nodes.index(self._call)
+            all_following_nodes = all_nodes[position+1:]
+            self._fd_value = self._find_argument(all_following_nodes)
+        return self._fd_value
 
     def _find_argument(self, nodes):
         '''Return the first argument in the list of nodes that has a
-        dependency with self. If one is not found return None
-
-        :param: the list of nodes that this method examines
-        :type: :func:`list` of :py:class:`psyclone.psyGen.Node`
-        :return: An argument object or None
-        :rtype: :py:class:`psyclone.psyGen.Argument`
-
-        '''
-        nodes_with_args = [x for x in nodes if isinstance(x, Call) or
-                           isinstance(x, HaloExchange) or
-                           isinstance(x, GlobalSum)]
-        for node in nodes_with_args:
-            for argument in node.args:
-                if self._depends_on(argument):
-                    return argument
+        dependency with self. If one is not found return None'''
+        for node in nodes:
+            # only check objects which contain their own data
+            if isinstance(node, Call) or isinstance(node, HaloExchange) \
+               or isinstance(node, GlobalSum):
+                for argument in node.args:
+                    if self._depends_on(argument):
+                        return argument
         return None
-
-    def _find_read_arguments(self, nodes):
-        '''Return a list of arguments from the list of nodes that have a read
-        dependency with self. If none are found then return an empty
-        list. If self is not a writer then return an empty list.
-
-        :param: the list of nodes that this method examines
-        :type: :func:`list` of :py:class:`psyclone.psyGen.Node`
-        :return: a list of arguments that this argument has a dependence with
-        :rtype: :func:`list` of :py:class:`psyclone.psyGen.Argument`
-
-        '''
-        if self.access not in self._write_access_types:
-            # I am not a writer so there will be no read dependencies
-            return []
-
-        # We only need consider nodes that have arguments
-        nodes_with_args = [x for x in nodes if isinstance(x, Call) or
-                           isinstance(x, HaloExchange) or
-                           isinstance(x, GlobalSum)]
-        arguments = []
-        for node in nodes_with_args:
-            for argument in node.args:
-                # look at all arguments in our nodes
-                if argument.name != self.name:
-                    # different names so there is no dependence
-                    continue
-                if isinstance(node, HaloExchange) and \
-                   isinstance(self.call, HaloExchange):
-                    # no dependence if both nodes are halo exchanges
-                    # (as they act on different vector indices).
-                    self.call.check_vector_halos_differ(node)
-                    continue
-                if argument.access in self._read_access_types:
-                    # there is a read dependence so append to list
-                    arguments.append(argument)
-                if argument.access in self._write_access_types:
-                    # there is a write dependence so finish our search
-                    return arguments
-
-        # we did not find a terminating write dependence in the list
-        # of nodes so we return any read dependencies that were found
-        return arguments
-
-    def _find_write_arguments(self, nodes, ignore_halos=False):
-        '''Return a list of arguments from the list of nodes that have a write
-        dependency with self. If none are found then return an empty
-        list. If self is not a reader then return an empty list.
-
-        :param: the list of nodes that this method examines
-        :type: :func:`list` of :py:class:`psyclone.psyGen.Node`
-        :param: ignore_halos: An optional, default `False`, boolean flag
-        :type: ignore_halos: bool
-        :return: a list of arguments that this argument has a dependence with
-        :rtype: :func:`list` of :py:class:`psyclone.psyGen.Argument`
-
-        '''
-        if self.access not in self._read_access_types:
-            # I am not a reader so there will be no write dependencies
-            return []
-
-        # We only need consider nodes that have arguments
-        nodes_with_args = [x for x in nodes if isinstance(x, Call) or
-                           (isinstance(x, HaloExchange) and
-                            not ignore_halos) or
-                           isinstance(x, GlobalSum)]
-        arguments = []
-        vector_count = 0
-        for node in nodes_with_args:
-            for argument in node.args:
-                # look at all arguments in our nodes
-                if argument.name != self.name:
-                    # different names so there is no dependence
-                    continue
-                if argument.access not in self._write_access_types:
-                    # no dependence if not a writer
-                    continue
-                if isinstance(node, HaloExchange):
-                    if isinstance(self.call, HaloExchange):
-                        # no dependence if both nodes are halo
-                        # exchanges (as they act on different vector
-                        # indices).
-                        self.call.check_vector_halos_differ(node)
-                        continue
-                    else:
-                        # a vector read will depend on more than one
-                        # halo exchange (a dependence for each vector
-                        # index) as halo exchanges only act on a
-                        # single vector index
-                        vector_count += 1
-                        arguments.append(argument)
-                        if vector_count == self._vector_size:
-                            # found all of the halo exchange
-                            # dependencies. As they are writers
-                            # we now return
-                            return arguments
-                else:
-                    # this argument is a writer so add it and return
-                    if arguments:
-                        raise GenerationError(
-                            "Internal error, found a writer dependence but "
-                            "there are already dependencies. This should not "
-                            "happen.")
-                    return [argument]
-        if arguments:
-            raise GenerationError(
-                "Internal error, no more nodes but there are "
-                "already dependencies. This should not happen.")
-        # no dependencies have been found
-        return []
 
     def _depends_on(self, argument):
         '''If there is a dependency between the argument and self then return
@@ -2815,24 +2323,17 @@ class Argument(object):
         assumption is OK as all elements of an array are typically
         accessed. However, we may need to revisit this when we change
         the iteration spaces of loops e.g. for overlapping
-        communication and computation.
+        communication and computation. '''
 
-        :param argument: the argument we will check to see whether
-        there is a dependence with this argument instance (self)
-        :type argument: :py:class:`psyclone.psyGen.Argument`
-        :return: True if there is a dependence and False if not
-        :rtype: bool
-
-        '''
+        writers = [MAPPING_ACCESSES["write"], MAPPING_ACCESSES["inc"],
+                   MAPPING_REDUCTIONS["sum"]]
+        readers = [MAPPING_ACCESSES["read"], MAPPING_ACCESSES["inc"]]
         if argument.name == self._name:
-            if self.access in self._write_access_types and \
-               argument.access in self._read_access_types:
+            if self.access in writers and argument.access in readers:
                 return True
-            if self.access in self._read_access_types and \
-               argument.access in self._write_access_types:
+            if self.access in readers and argument.access in writers:
                 return True
-            if self.access in self._write_access_types and \
-               argument.access in self._write_access_types:
+            if self.access in writers and argument.access in writers:
                 return True
         return False
 
@@ -2860,7 +2361,7 @@ class TransInfo(object):
 
     For example:
 
-    >>> from psyclone.psyGen import TransInfo
+    >>> from psyGen import TransInfo
     >>> t = TransInfo()
     >>> print t.list
     There is 1 transformation available:
@@ -2882,10 +2383,10 @@ class TransInfo(object):
 
         if module is None:
             # default to the transformation module
-            from psyclone import transformations
+            import transformations
             module = transformations
         if base_class is None:
-            from psyclone import psyGen
+            import psyGen
             base_class = psyGen.Transformation
         # find our transformations
         self._classes = self._find_subclasses(module, base_class)

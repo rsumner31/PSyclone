@@ -1,274 +1,225 @@
-.. _system_specific_setup:
+.. _Ubuntu14.03.3:
 
 System-specific set-up
 ======================
-This chapter is split into two sections: :ref:`setup_user`
-describes the setup for a user of PSyclone. It includes all steps necessary
-to be able to use PSyclone. And while you could obviously do
-some development, none of the required tools for testing or
-documentation creation will be installed.
 
-:ref:`dev_setup` describes the additional installation of
-all required tools to run tests, and create documentation.
+This section provides system-specific information on how to set-up
+your system to use PSyclone.
 
-Both sections have detailed instructions for Ubuntu 16.04.2 and 
-OpenSUSE 42.2 - if you are working with a different Linux
-distribution some adjustments will be necessary.
+Ubuntu 14.04.3
+--------------
 
-.. _setup_user:
+This guide has been tested with a vanilla installation of Ubuntu 14.04.3.
+
+.. _users:
 
 User set-up
------------
++++++++++++
 
-This section provides system-specific information on how to
-set-up your system to use PSyclone for users.
-It has been tested with a vanilla installation of Ubuntu 16.04.2
-and OpenSUSE 42.2. You need a terminal window for entering the commands into.
+Get a terminal window. You can do this by pressing <ctrl><Alt><t>
+together, or click the top left "search" icon and type "terminal".
 
-Installing dependencies
-^^^^^^^^^^^^^^^^^^^^^^^
-Most required dependencies are installed from the 
-Python Package Index (https://packaging.python.org/installing/)
-using the program pip ("PIP Installs Packages"). Besides ``pip``
-it is also recommended to install the graphviz package to be
-able to visualise dependency graphs. This is optional and the associated
-routine will silently return if the graphviz bindings are not
-installed.
+Install PSyclone
+^^^^^^^^^^^^^^^^
 
-.. _ubuntu_user:
-
-Installing dependencies on Ubuntu
-+++++++++++++++++++++++++++++++++
-
-On Ubuntu ``pip`` and ``graphviz`` are installed using ``apt-get``. Remember
-that graphviz is optional and that you'll need to install the graphviz
-package in addition to the Python bindings.
+Change directory to where you would like to place the code (where
+<PSYCLONEHOME> refers to where you would like to place the code):
 ::
 
-   > sudo apt-get install python-pip graphviz
+   > cd <PSYCLONEHOME>
 
-.. _opensuse_user:
-
-Installing dependencies on OpenSUSE
-+++++++++++++++++++++++++++++++++++
-
-While the vanilla OpenSUSE installation includes ``pip``,
-the installed version only works for Python 3. So the
-python 2 version of PIP still needs to be installed. Note
-that the graphviz package is installed by default.
-::
-
-    > sudo zypper install python-pip
-
-.. warning::
-    PIP for python2 on OpenSUSE is called ``pip2.7``. So you need
-    to replace the ``pip`` command with ``pip2.7`` in all commands in
-    the following sections. 
-
-
-
-Installing PSyclone
-^^^^^^^^^^^^^^^^^^^
-Change your working directory to where you would like to place the code and 
-download the latest stable release of PSyclone. 
+Now download and extract the latest release of PSyclone, e.g.:
 
 .. parsed-literal::
 
-   > cd <PSYCLONEHOME>
    > wget https://github.com/stfc/PSyclone/archive/\ |release|\ .tar.gz
    > gunzip \ |release|\ .tar.gz
    > tar xf \ |release|\ .tar
    > rm \ |release|\ .tar
-   > cd PSyclone-\ |release|
+
+Set your python path and path appropriately:
+
+.. parsed-literal::
+
+   > cd PSyclone-\ |release|\ 
    > export PYTHONPATH=`pwd`/src:${PYTHONPATH}
    > export PATH=`pwd`/bin:${PATH}
 
-This sets up your python path and path appropriately. You may want to set
-these paths permanently (e.g. by editing your ${HOME}/.bashrc file if you run
-the BASH shell). You can also use the latest version using git, as described
-in :ref:`psyclone_from_git`.
+You may want to set these paths permanently (e.g. by editing your
+${HOME}/.bashrc file if you run the BASH shell).
 
-Common installation
-^^^^^^^^^^^^^^^^^^^
-To avoid warnings during the dependency installation, it is recommended to update ``pip``
-to the latest version::
+Install Python packages using apt package manager
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    > sudo pip install --upgrade pip
+numpy is required to run PSyclone
+::
 
-.. warning::
-    As mentioned in :ref:`opensuse_user`: on OpenSUSE this commands needs to be
-    ``sudo pip2.7 install --upgrade pip``.
+   > sudo apt-get install python-numpy
 
-Next you need to install the ``fparser`` and ``pyparsing`` packages::
+pyparsing is required by PSyclone
+::
 
-    > sudo pip install fparser pyparsing 
+   > sudo apt-get install python-pyparsing
 
-.. tip::
+.. _install_pip:
 
-    With ``pip`` it is possible to install packages either system-wide
-    (which requires root privileges) as above, or for a single user only
-    (in ~/.local). While the latter is only useful for one
-    particular user, it means that PSyclone can be installed
-    using ``pip`` without needing root privileges. In order to install
-    a package for a user, add the --user command line option to
-    all pip commands. This flag requests that the packages be installed locally
-    for the current user rather than requiring root access::
+Install pip
+^^^^^^^^^^^
 
-        > pip install --user fparser pyparsing
+The pip tool enables Python packages to be installed from the Python
+Package Index (https://packaging.python.org/installing/). Install it like so:
+::
 
-    You may remove the use of ``sudo`` and add the ``--user`` option to all
-    pip commands described in this document.
+   > sudo apt-get install python-pip
 
-    Uninstalling is simply a matter of doing::
+.. _install_fparser:
 
-       > sudo pip uninstall fparser pyparsing
+Install fparser
+^^^^^^^^^^^^^^^
+
+fparser is also required by PSyclone but is not available from the
+Ubuntu software centre. It can instead be installed from the
+Python Package Index using pip:
+::
+
+   > sudo pip install fparser
+
+Uninstalling is simply a matter of doing:
+::
+
+   > sudo pip uninstall fparser
+
+If you do not have sufficient privileges for a system-wide install then
+you can do:
+::
+
+   > pip install --user fparser
+
+(The ``--user`` flag requests that the packages be installed locally for
+the current user rather than requiring root access.) In order for Python
+to find such locally-installed packages the necessary directory must be
+added to the PYTHONPATH, e.g.:
+::
+
+   > export PYTHONPATH=/home/a_user/.local/lib/python2.7/site-packages:${PYTHONPATH}
+
+Alternatively, if pip is not an option, a tarball of the latest release
+may be downloaded from https://github.com/stfc/fparser/releases. Simply
+unpack the tarball and ensure that the resulting
+``fparser-x.y.z/src/fparser`` directory is in your PYTHONPATH.
 
 PSyclone supports the ability to output a schedule dependency graph
 using the graphviz package. This is optional and the associated
 routine will silently return if the graphviz bindings are not
-installed. If you have the graphviz package installed (see
-especially section :ref:`ubuntu_user` if you are on Ubuntu), you also need
-to install the python bindings to the graphviz package:
+installed. To output a graph you need to install the graphviz package
+::
+
+   > sudo apt-get install graphviz
+
+and the Python bindings to the graphviz package
 ::
 
    > sudo pip install graphviz
 
 If you just want to use PSyclone then you've installed all you need
-and you are ready to go to the getting-going :ref:`getting-going-run` section.
-
-.. _dev_setup:
+and you're ready to go to the getting-going :ref:`getting-going-run`
+section.
 
 Developer set-up
-----------------
+++++++++++++++++
 
 This section adds software that is used to develop and test
-PSyclone. It includes all packages for testing and creation of
-documentation in html and pdf. We assume you have already installed the software
-described in the :ref:`setup_user` section.
+PSyclone. Note, we assume you have already installed the software
+described in the :ref:`users` section.
 
-.. _psyclone_from_git:
+pytest
+^^^^^^
 
-Installing PSyclone From Git
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-For development it is recommended to get a copy of PSyclone using git to get 
-access to the latest development version.
-
-Installing git for Ubuntu
-+++++++++++++++++++++++++
-You need to install the git package::
-
-    > sudo apt-get install git
-
-
-Installing git on OpenSUSE
-++++++++++++++++++++++++++
-You need to install the git package::
-
-    >> sudo zypper --no-recommends install git
-
-
-Cloning PSyclone using git
-++++++++++++++++++++++++++
-Cloning PSyclone from git and setting up your environment is done as follows::
-
-   > cd <PSYCLONEHOME>
-   > git clone https://github.com/stfc/PSyclone.git
-   > cd PSyclone
-   > pip install --user -e .
-
-Note that the "-e" flag causes the project to be installed in 'editable' mode
-so that any changes to the PSyclone source take effect immediately. On OpenSUSE
-it is necessary to add $HOME/.local/bin to your $PATH.
-
-
-Installing documentation tools
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Install Sphinx for creating PSyclone documentation
+Install pytest for running python tests
 ::
 
-   > sudo pip install sphinx
+   > sudo apt-get install python-pytest
 
-You can now build html documentation::
+You can now run the PSyclone python tests:
+
+.. parsed-literal::
+
+   > cd PSyclone-\ |release|\ /src/psyclone/tests
+   > py.test
+
+Documentation
+^^^^^^^^^^^^^
+
+Install Sphinx for creating PSyclone documentation 
+::
+
+   > sudo apt-get install python-sphinx
+
+You can now build html and latex documentation (but not pdf)
+::
 
    > cd doc
    > make html
+   > make latex
 
-The latex package is required to create the pdf documentation
-for PSyclone. Installing the full dependencies can take up several GB,
-the instructions for Ubuntu and OpenSUSE only install a minimal subset.
+Install texlive for the PSyclone pdf documentation.
 
-Installing LaTeX on Ubuntu
-++++++++++++++++++++++++++
-The following three packages need to be installed to create the pdf documentation.
-It is recommended to install the packages in one ``apt-get`` command, since
-otherwise, depending on your filesystem, unnecessary snapshots might be created
-that take up additional space. The ``--no-install-recommends`` option
-significantly reduces the number of installed packages::
-
-   > sudo apt-get install --no-install-recommends texlive \
-   texlive-latex-extra latexmk
-
-Installing LaTeX on OpenSUSE
-++++++++++++++++++++++++++++
-The following command installs the minimum number of packages
-in order to create the pdf documentation - around 130 packages all
-in all, requiring approximately 300 MB.
-
-
-.. warning::
-
-    It is important to install the packages in one ``zypper`` command, since
-    otherwise, depending on your filesystem, unnecessary snapshots might be
-    created after each package, which can add up to several GB of data.
+.. warning:
+    These installs are large. It may be possible to install a subset of texlive-latex-extra but the authors do not know what this subset is.
 
 ::
 
-   > sudo zypper install --no-recommends texlive-latex texlive-latexmk \
-   texlive-babel-english texlive-cmap texlive-psnfss texlive-fncychap  \
-   texlive-fancyhdr texlive-titlesec texlive-tabulary texlive-varwidth \
-   texlive-framed texlive-fancyvrb texlive-float texlive-wrapfig       \
-   texlive-parskip texlive-upquote texlive-capt-of texlive-needspace   \
-   texlive-metafont texlive-makeindex texlive-times texlive-helvetic   \
-   texlive-courier texlive-dvips
+   > sudo apt-get install texlive
+   > sudo apt-get install texlive-latex-extra
 
-
-Creating pdf documentation
-++++++++++++++++++++++++++
-
-You can now build the pdf documentation using
+You can now build the pdf documentation
 ::
 
    > cd doc
    > make latexpdf
 
-Installing testing tools
-^^^^^^^^^^^^^^^^^^^^^^^^
-The following modules are recommended to get access to testing and
-formatting tools::
+Static code tests and style checking
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   > sudo pip install pytest pep8 pylint==1.6.5 pytest-cov pytest-pep8 \
-   pytest-pylint pytest-flakes pytest-pep257
+Install the standalone pep8 tool
+::
 
-.. warning::
-    It appears that the 1.7 series of ``pylint`` has a bug (at least up to 1.7.2)
-    and does not work properly with PSyclone - it aborts with a
-    "maximum recursion depth exceeded" error message. It is therefore
-    recommended to use version 1.6.5, as specified in the above ``pip`` command.
+   > sudo apt-get install pep8
 
-
-You can now run the PSyclone python tests::
-
-   > cd PSyclone.git
-   > py.test
-
-In order to see whether the Python code conforms to the pep8
-standards, use::
+You can now test whether the Python code conforms to the pep8
+standards
+::
 
    > pep8 code.py
 
-Verifying the pylint standards is done with::
+Install the standalone pylint tool
+::
+
+   > sudo apt-get install pylint
+
+You can now test how well the Python code conforms to the pylint
+standards
+::
 
    > pylint code.py
 
+Finally, install useful pytest extensions using pip:
+::
+
+   > sudo pip install pytest-cov
+   > sudo pip install pytest-pep8
+   > sudo pip install pytest-pylint
+   > sudo pip install pytest-flakes
+   > sudo pip install pytest-pep257
+
+If you don't have root access then you can specify the ``--user`` argument to
+install packages in a user-local directory -- see the instructions on
+:ref:`install_fparser` above.
+
+Should you wish to remove the above packages at any point, simply instruct
+pip to uninstall them, e.g.:
+::
+   
+   > sudo pip uninstall pytest-cov
 
 OK, you're all set up.

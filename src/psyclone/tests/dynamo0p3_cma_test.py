@@ -40,7 +40,12 @@
 ''' This module tests the support for Column-Matrix-Assembly operators in
 the Dynamo 0.3 API using pytest. '''
 
-from __future__ import absolute_import
+# Since this is a file containing tests which often have to get in and
+# change the internal state of objects we disable pylint's warning
+# about such accesses
+# pylint: disable=protected-access
+
+
 import os
 import pytest
 import fparser
@@ -95,7 +100,7 @@ def test_cma_mdata_assembly():
     assert dkm._cma_operation == "assembly"
 
 
-def test_cma_mdata_assembly_missing_op():
+def test_cma_mdata_assembly_missing_op():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if the supplied meta-data
     is assembling a gh_columnwise_operator but doesn't have a read-only
     gh_operator '''
@@ -182,7 +187,7 @@ def test_cma_mdata_writes_lma_op():
             "allowed.") in str(excinfo)
 
 
-def test_cma_mdata_assembly_diff_spaces():
+def test_cma_mdata_assembly_diff_spaces():  # pylint: disable=invalid-name
     ''' Check that we successfully parse the supplied meta-data if it
     is assembling a gh_columnwise_operator but the to/from spaces don't
     match those of the supplied gh_operator '''
@@ -205,7 +210,7 @@ def test_cma_mdata_assembly_diff_spaces():
     assert dkm._cma_operation == "assembly"
 
 
-def test_cma_mdata_asm_vector_error():
+def test_cma_mdata_asm_vector_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if a kernel assembling a
     CMA operator has any vector arguments '''
     fparser.logging.disable('CRITICAL')
@@ -229,7 +234,7 @@ def test_cma_mdata_asm_vector_error():
         in str(excinfo)
 
 
-def test_cma_mdata_asm_stencil_error():
+def test_cma_mdata_asm_stencil_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if a kernel assembling a
     CMA operator specifies a stencil access on a field'''
     fparser.logging.disable('CRITICAL')
@@ -292,7 +297,7 @@ def test_cma_mdata_apply():
     assert dkm._cma_operation == "apply"
 
 
-def test_cma_mdata_apply_too_many_ops():
+def test_cma_mdata_apply_too_many_ops():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if there are too-many
     CMA operators '''
     fparser.logging.disable('CRITICAL')
@@ -311,7 +316,7 @@ def test_cma_mdata_apply_too_many_ops():
             "operator in its list of arguments but found 2") in str(excinfo)
 
 
-def test_cma_mdata_apply_too_many_flds():
+def test_cma_mdata_apply_too_many_flds():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if there are too-many
     field args to a kernel that applies a CMA operator '''
     fparser.logging.disable('CRITICAL')
@@ -330,7 +335,7 @@ def test_cma_mdata_apply_too_many_flds():
             "has 4") in str(excinfo)
 
 
-def test_cma_mdata_apply_no_read_fld():
+def test_cma_mdata_apply_no_read_fld():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if there is no read-only
     field arg to a kernel that applies a CMA operator '''
     fparser.logging.disable('CRITICAL')
@@ -346,7 +351,7 @@ def test_cma_mdata_apply_no_read_fld():
             "must have one read-only field argument") in str(excinfo)
 
 
-def test_cma_mdata_apply_no_write_fld():
+def test_cma_mdata_apply_no_write_fld():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if there is no written
     field arg to a kernel that applies a CMA operator '''
     fparser.logging.disable('CRITICAL')
@@ -362,7 +367,7 @@ def test_cma_mdata_apply_no_write_fld():
             "must write to one field argument") in str(excinfo)
 
 
-def test_cma_mdata_apply_wrong_spaces():
+def test_cma_mdata_apply_wrong_spaces():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if the function spaces of the
     read and write fields do not match the from and to function spaces of the
     CMA operator '''
@@ -389,7 +394,7 @@ def test_cma_mdata_apply_wrong_spaces():
             "space of the operator (any_space_2)") in str(excinfo)
 
 
-def test_cma_mdata_apply_vector_error():
+def test_cma_mdata_apply_vector_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if the meta-data for a kernel
     that applies a CMA operator contains a vector argument '''
     fparser.logging.disable('CRITICAL')
@@ -411,7 +416,7 @@ def test_cma_mdata_apply_vector_error():
             "forbidden.") in str(excinfo)
 
 
-def test_cma_mdata_apply_fld_stencil_error():
+def test_cma_mdata_apply_fld_stencil_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if the meta-data for a kernel
     that applies a CMA operator contains a field argument with a stencil
     access '''
@@ -468,7 +473,7 @@ def test_cma_mdata_matrix_prod():
     assert dkm._cma_operation == "matrix-matrix"
 
 
-def test_cma_mdata_matrix_too_few_args():
+def test_cma_mdata_matrix_too_few_args():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error when there are too few
     arguments specified in meta-data '''
     fparser.logging.disable('CRITICAL')
@@ -503,7 +508,7 @@ def test_cma_mdata_matrix_field_arg():
             "has: ['gh_field', ") in str(excinfo)
 
 
-def test_cma_mdata_matrix_no_scalar_arg():
+def test_cma_mdata_matrix_no_scalar_arg():  # pylint: disable=invalid-name
     ''' Check that we successfully parse meta-data for a matrix-matrix kernel
     that has no scalar arguments. '''
     fparser.logging.disable('CRITICAL')
@@ -517,7 +522,7 @@ def test_cma_mdata_matrix_no_scalar_arg():
     assert dkm._cma_operation == "matrix-matrix"
 
 
-def test_cma_mdata_matrix_2_scalar_args():
+def test_cma_mdata_matrix_2_scalar_args():   # pylint: disable=invalid-name
     ''' Check that we successfully parse meta-data for a matrix-matrix kernel
     that has 2 scalar arguments. '''
     fparser.logging.disable('CRITICAL')
@@ -579,7 +584,7 @@ def test_cma_mdata_stencil_invalid():
             "is gh_operator or gh_columnwise_operator") in str(excinfo)
 
 
-def test_cma_mdata_matrix_vector_error():
+def test_cma_mdata_matrix_vector_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error when a matrix-matrix kernel
     contains a vector argument '''
     fparser.logging.disable('CRITICAL')
@@ -595,7 +600,7 @@ def test_cma_mdata_matrix_vector_error():
             "argument (gh_columnwise_operator*3)") in str(excinfo)
 
 
-def test_cma_asm_cbanded_dofmap_error():
+def test_cma_asm_cbanded_dofmap_error():  # pylint: disable=invalid-name
     ''' Check that we raise expected internal error if DynInvokeDofmaps
     encounters an assembly kernel that has more than one CMA op argument '''
     _, invoke_info = parse(
@@ -790,7 +795,7 @@ def test_cma_asm_field_same_fs():
         assert "cma_op1_proxy%is_dirty(" not in code
 
 
-def test_cma_apply_indirection_dofmap_error():
+def test_cma_apply_indirection_dofmap_error():  # pylint: disable=invalid-name
     ''' Check that we raise expected internal error if DynInvokeDofmaps
     encounters an apply kernel that has more than one CMA op argument '''
     _, invoke_info = parse(
@@ -1139,7 +1144,7 @@ def test_cma_asm_stub_gen():
     assert expected in str(result)
 
 
-def test_cma_asm_with_field_stub_gen():
+def test_cma_asm_with_field_stub_gen():  # pylint: disable=invalid-name
     ''' Test the kernel-stub generator for CMA operator assembly when a
     field is involved '''
     result = generate(os.path.join(BASE_PATH,
@@ -1277,7 +1282,7 @@ def test_cma_app_stub_gen():
     assert expected in str(result)
 
 
-def test_cma_app_same_space_stub_gen():
+def test_cma_app_same_space_stub_gen():  # pylint: disable=invalid-name
     ''' Test the kernel-stub generator for a CMA apply kernel where the
     to/from function spaces of the CMA operator are the same. This kernel has
     two fields and one CMA operator as arguments. '''
@@ -1360,7 +1365,7 @@ def test_cma_mul_stub_gen():
     assert expected in str(result)
 
 
-def test_cma_mul_with_scalars_stub_gen():
+def test_cma_mul_with_scalars_stub_gen():  # pylint: disable=invalid-name
     ''' Test the kernel-stub generator for a CMA matrix-matrix kernel that
     includes scalar arguments '''
     result = generate(
