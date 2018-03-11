@@ -16,7 +16,7 @@ Transformations can be imported directly, but the user needs to know
 what transformations are available. A helper class **TransInfo** is
 provided to show the available transformations
 
-.. autoclass:: psyGen.TransInfo
+.. autoclass:: psyclone.psyGen.TransInfo
     :members:
 
 .. _sec_transformations_available:
@@ -35,27 +35,33 @@ The generic transformations currently available are given below (a
 number of these have specialisations which can be found in the
 API-specific sections).
 
-.. autoclass:: transformations.KernelModuleInlineTrans
+.. autoclass:: psyclone.transformations.KernelModuleInlineTrans
     :members:
     :noindex:
 
-.. autoclass:: transformations.LoopFuseTrans
+.. autoclass:: psyclone.transformations.LoopFuseTrans
     :members:
     :noindex:
 
-.. autoclass:: transformations.ColourTrans
+.. _sec_move_trans:
+
+.. autoclass:: psyclone.transformations.MoveTrans
     :members:
     :noindex:
 
-.. autoclass:: transformations.OMPLoopTrans
+.. autoclass:: psyclone.transformations.ColourTrans
     :members:
     :noindex:
 
-.. autoclass:: transformations.OMPParallelTrans
+.. autoclass:: psyclone.transformations.OMPLoopTrans
     :members:
     :noindex:
 
-.. autoclass:: transformations.OMPParallelLoopTrans
+.. autoclass:: psyclone.transformations.OMPParallelTrans
+    :members:
+    :noindex:
+
+.. autoclass:: psyclone.transformations.OMPParallelLoopTrans
     :members:
     :noindex:
 
@@ -65,11 +71,9 @@ API-specific sections).
           halo swaps or global sums will produce an error. In such
           cases it may be possible to re-order the nodes in the
           Schedule such that the halo swaps or global sums are
-          performed outside the parallel region. At the moment any
-          such reordering would have to be performed by directly
-          modifying the schedule and would be at the users own
-          risk. In the future a transformation will be added to
-          support the re-ordering of nodes.
+          performed outside the parallel region. The 
+	  :ref:`MoveTrans <sec_move_trans>` transformation may be used
+          for this.
 
    
 Applying
@@ -184,7 +188,7 @@ example ...
 PSyclone also provides the same functionality via a function (which is
 what the **generator.py** script calls internally)
 
-.. autofunction:: generator.generate
+.. autofunction:: psyclone.generator.generate
 		  :noindex:
 
 A valid script file must contain a **trans** function which accepts a **PSy**
@@ -276,8 +280,5 @@ PSyclone does not support (distributed-memory) halo swaps or global
 sums within OpenMP parallel regions.  Attempting to create a parallel
 region for a set of nodes that includes halo swaps or global sums will
 produce an error.  In such cases it may be possible to re-order the
-nodes in the Schedule such that the halo swaps or global sums are
-performed outside the parallel region. At the moment any such
-reordering would have to be performed by directly modifying the
-schedule and would be at the users own risk. In the future a
-transformation will be added to support the re-ordering of nodes.
+nodes in the Schedule using the :ref:`MoveTrans <sec_move_trans>`
+transformation.
