@@ -30,32 +30,20 @@
 ! ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ! POSSIBILITY OF SUCH DAMAGE.
 ! -----------------------------------------------------------------------------
-! Author R. Ford STFC Daresbury Lab
-! Modified I. Kavcic Met Office
+! Authors R. Ford and A. R. Porter, STFC Daresbury Lab
 
-! A kernel which writes to two fields, one on W3 (discontinuous) and one on W1
-! (continuous). The generated loop bounds in the PSy layer must therefore
-! be for the 'worst case' which is the continuous space.
-module testkern_write_w3_w1_mod
-
-  type, extends(kernel_type) :: testkern_write_w3_w1_type
-     type(arg_type), dimension(7) :: meta_args =   &
-          (/ arg_type(gh_field, gh_write, w3),     &
-             arg_type(gh_field, gh_read,  w2),     &
-             arg_type(gh_field, gh_read,  w2),     &
-             arg_type(gh_field, gh_write, w1),     &
-             arg_type(gh_field, gh_read,  wtheta), &
-             arg_type(gh_field, gh_read,  w2h),    &
-             arg_type(gh_field, gh_read,  w2v)     &
+module testkern_w3_only
+  type, extends(kernel_type) :: testkern_w3_only_type
+     type(arg_type), dimension(2) :: meta_args =  (/  &
+             arg_type(gh_field,gh_write,w3), &
+             arg_type(gh_field,gh_read, w3)  &
            /)
      integer, parameter :: iterates_over = cells
    contains
-     procedure() :: code => testkern_write_w3_w1_code
-  end type testkern_write_w3_w1_type
-
+     procedure() :: code => testkern_code
+  end type testkern_w3_only_type
 contains
 
-  subroutine testkern_write_w3_w1_code()
-  end subroutine testkern_write_w3_w1_code
-
-end module testkern_write_w3_w1_mod
+  subroutine testkern_code()
+  end subroutine testkern_code
+end module testkern_w3_only

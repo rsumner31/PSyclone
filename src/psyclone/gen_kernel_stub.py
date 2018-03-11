@@ -32,23 +32,22 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
 # Author R. Ford STFC Daresbury Lab
-# Modified work Copyright (c) 2017 by J. Henrichs, Bureau of Meteorology
 
 '''A python script and python function to generate an empty kernel
     subroutine with the required arguments and datatypes (which we
     call a stub) when presented with Kernel Metadata.
 '''
 
-import os
-import sys
-import traceback
-
 import fparser
+from fparser import api as fpapi
 from psyclone.dynamo0p3 import DynKern, DynKernMetadata
 from psyclone.psyGen import GenerationError
 from psyclone.parse import ParseError
 from psyclone.config import SUPPORTEDSTUBAPIS, DEFAULTSTUBAPI
 from psyclone.line_length import FortLineLength
+import os
+import sys
+import traceback
 
 
 def generate(filename, api=""):
@@ -77,10 +76,8 @@ def generate(filename, api=""):
     fparser.logging.disable('CRITICAL')
     try:
         ast = fparser.api.parse(filename, ignore_comments=False)
-
-    except (fparser.utils.AnalyzeError, AttributeError) as error:
-        raise ParseError("Code appears to be invalid Fortran: " +
-                         str(error))
+    except AttributeError:
+        raise ParseError("Code appears to be invalid Fortran")
 
     metadata = DynKernMetadata(ast)
     kernel = DynKern()
@@ -111,7 +108,7 @@ def run():
     except (IOError, ParseError, GenerationError, RuntimeError) as error:
         print "Error:", error
         exit(1)
-    except Exception as error:   # pylint: disable=broad-except
+    except Exception as error:
         print "Error, unexpected exception:\n"
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print exc_type

@@ -38,8 +38,12 @@
     using pytest. Currently all built-in operations are 'pointwise' in that
     they iterate over DOFs. However this may change in the future. '''
 
+# Since this is a file containing tests which often have to get in and
+# change the internal state of objects we disable pylint's warning
+# about such accesses
+# pylint: disable=protected-access
+
 # imports
-from __future__ import absolute_import
 import os
 import pytest
 from psyclone.parse import parse, ParseError
@@ -228,7 +232,7 @@ def test_builtin_operator_arg():
             "type gh_operator" in str(excinfo))
 
 
-def test_builtin_args_not_same_space():
+def test_builtin_args_not_same_space():  # pylint: disable=invalid-name
     ''' Check that we raise the correct error if we encounter a built-in
     that has arguments on different function spaces '''
     # Save the name of the actual builtin-definitions file
@@ -353,7 +357,7 @@ def test_dynbuiltfactory_str():
 # ------------- Adding (scaled) fields ------------------------------------- #
 
 
-def test_X_plus_Y():
+def test_X_plus_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynXPlusYKern returns the
     expected string and 2) we generate correct code for the built-in
     Z = X + Y where X and Y are fields '''
@@ -412,7 +416,7 @@ def test_X_plus_Y():
             assert output_dm_2 in code
 
 
-def test_inc_X_plus_Y():
+def test_inc_X_plus_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncXPlusYKern returns the
     expected string and 2) we generate correct code for the built-in
     X = X + Y where X and Y are fields '''
@@ -459,7 +463,7 @@ def test_inc_X_plus_Y():
             assert output in code
 
 
-def test_aX_plus_Y():
+def test_aX_plus_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynAXPlusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = a*X + Y where 'a' is a scalar and Z, X and Y are fields '''
@@ -531,7 +535,7 @@ def test_aX_plus_Y():
             assert output_dm_2 in code
 
 
-def test_inc_aX_plus_Y():
+def test_inc_aX_plus_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncAXPlusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = a*X + Y where 'a' is a scalar and X and Y are fields '''
@@ -602,7 +606,7 @@ def test_inc_aX_plus_Y():
             assert output_dm_2 in code
 
 
-def test_inc_X_plus_bY():
+def test_inc_X_plus_bY():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncXPlusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X + b*Y where 'b' is a scalar and X and Y are fields '''
@@ -673,7 +677,7 @@ def test_inc_X_plus_bY():
             assert output_dm_2 in code
 
 
-def test_aX_plus_bY():
+def test_aX_plus_bY():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynAXPlusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = a*X + b*Y where 'a' and 'b' are scalars and Z, X and
@@ -746,7 +750,7 @@ def test_aX_plus_bY():
             assert output_dm_2 in code
 
 
-def test_inc_aX_plus_bY():
+def test_inc_aX_plus_bY():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncAXPlusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = a*X + b*Y where 'a' and 'b' are scalars and X and Y
@@ -822,7 +826,7 @@ def test_inc_aX_plus_bY():
 # ------------- Subtracting (scaled) fields --------------------------------- #
 
 
-def test_X_minus_Y():
+def test_X_minus_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynXMinusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = X - Y where Z, X and Y are fields '''
@@ -881,7 +885,7 @@ def test_X_minus_Y():
             assert output_dm_2 in code
 
 
-def test_inc_X_minus_Y():
+def test_inc_X_minus_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncXMinusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X - Y where X and Y are fields '''
@@ -938,7 +942,7 @@ def test_inc_X_minus_Y():
             assert output in code
 
 
-def test_aX_minus_Y():
+def test_aX_minus_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynAXMinusYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = a*X - Y where 'a' is a scalar and Z, X and Y are fields '''
@@ -1010,7 +1014,7 @@ def test_aX_minus_Y():
             assert output_dm_2 in code
 
 
-def test_X_minus_bY():
+def test_X_minus_bY():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynXMinusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = X - b*Y where 'b' is a scalar and Z, X and Y are fields '''
@@ -1082,7 +1086,7 @@ def test_X_minus_bY():
             assert output_dm_2 in code
 
 
-def test_inc_X_minus_bY():
+def test_inc_X_minus_bY():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncXMinusBYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X - b*Y where 'b' is a scalar and X and Y are fields '''
@@ -1156,7 +1160,7 @@ def test_inc_X_minus_bY():
 # ------------- Multiplying (scaled) fields --------------------------------- #
 
 
-def test_X_times_Y():
+def test_X_times_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynXTimesYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = X*Y where Z, X and Y are fields '''
@@ -1224,7 +1228,7 @@ def test_X_times_Y():
             assert output in code
 
 
-def test_inc_X_times_Y():
+def test_inc_X_times_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncXTimesYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X*Y where X and Y are fields '''
@@ -1283,7 +1287,7 @@ def test_inc_X_times_Y():
             assert output_dm_2 in code
 
 
-def test_inc_aX_times_Y():
+def test_inc_aX_times_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncAXTimesYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = a*X*Y where 'a' is a scalar and X and Y are fields '''
@@ -1357,7 +1361,7 @@ def test_inc_aX_times_Y():
 # ------------- Scaling fields (multiplying by a scalar --------------------- #
 
 
-def test_a_times_X():
+def test_a_times_X():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynATimesXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Y = a*X where 'a' is a scalar and X and Y are fields '''
@@ -1414,7 +1418,7 @@ def test_a_times_X():
             assert output_dm_2 in code
 
 
-def test_inc_a_times_X():
+def test_inc_a_times_X():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncATimesXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = a*X where 'a' is a scalar and X is a field '''
@@ -1485,7 +1489,7 @@ def test_inc_a_times_X():
 # ------------- Dividing (scaled) fields ------------------------------------ #
 
 
-def test_X_divideby_Y():
+def test_X_divideby_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynXDividebyYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Z = X/Y where Z, X and Y are fields '''
@@ -1544,7 +1548,7 @@ def test_X_divideby_Y():
             assert output_dm_2 in code
 
 
-def test_inc_X_divideby_Y():
+def test_inc_X_divideby_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncXDividebyYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X/Y where X and Y are fields '''
@@ -1605,7 +1609,7 @@ def test_inc_X_divideby_Y():
 # ------------- Raising field to a scalar ----------------------------------- #
 
 
-def test_inc_X_powreal_a():
+def test_inc_X_powreal_a():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncXPowrealAKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X**a where 'a' is a real scalar and X is a field '''
@@ -1652,7 +1656,7 @@ def test_inc_X_powreal_a():
             assert output in code
 
 
-def test_inc_X_powint_n(tmpdir, f90, f90flags):
+def test_inc_X_powint_n(tmpdir, f90, f90flags):  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynIncXPowintNKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = X**n where 'n' is an integer scalar and X is a field '''
@@ -1708,7 +1712,7 @@ def test_inc_X_powint_n(tmpdir, f90, f90flags):
 # ------------- Setting field elements to a value --------------------------- #
 
 
-def test_setval_c():
+def test_setval_c():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynSetvalCKern returns the
     expected string and 2) we generate correct code for the built-in
     operation X = c where 'c' is a constant scalar value and X is a field '''
@@ -1773,7 +1777,7 @@ def test_setval_c():
             assert output_dm_2 in code
 
 
-def test_setval_X():
+def test_setval_X():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynSetvalXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation Y = X where X and Y are fields '''
@@ -1842,7 +1846,7 @@ def test_setval_X():
 # ------------- Inner product of fields ------------------------------------- #
 
 
-def test_X_innerproduct_Y():
+def test_X_innerproduct_Y():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynXInnerproductYKern returns the
     expected string and 2) we generate correct code for the built-in
     operation which calculates inner product of fields X and Y as
@@ -1920,7 +1924,7 @@ def test_X_innerproduct_Y():
             assert "      TYPE(scalar_type) global_sum\n" in code
 
 
-def test_X_innerproduct_X():
+def test_X_innerproduct_X():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynXInnerproductXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation which calculates inner product of a field X by itself as
@@ -2000,7 +2004,7 @@ def test_X_innerproduct_X():
 # ------------- Sum field elements ------------------------------------------ #
 
 
-def test_sum_X():
+def test_sum_X():  # pylint: disable=invalid-name
     ''' Test that 1) the str method of DynSumXKern returns the
     expected string and 2) we generate correct code for the built-in
     operation which sums elements of a field X as sumfld = sum(X(:)) '''
@@ -2076,7 +2080,7 @@ def test_sum_X():
 @pytest.mark.xfail(
     reason="Requires kernel-argument dependency analysis to deduce the "
     "spaces of the fields passed to the built-in kernel")
-def test_X_times_Y_on_different_spaces():
+def test_X_times_Y_on_different_spaces():  # pylint: disable=invalid-name
     ''' Test that we raise an error if X_times_Y() is called for
     two fields that are on different spaces '''
     _, invoke_info = parse(
@@ -2092,7 +2096,7 @@ def test_X_times_Y_on_different_spaces():
 @pytest.mark.xfail(
     reason="Dependency analysis of kernel arguments within an invoke is "
     "not yet implemented")
-def test_X_times_Y_deduce_space():
+def test_X_times_Y_deduce_space():  # pylint: disable=invalid-name
     ''' Test that we generate correct code if X_times_Y() is called
     in an invoke containing another kernel that allows the space of the
     fields to be deduced '''
@@ -2184,7 +2188,7 @@ def test_builtin_set(tmpdir, f90, f90flags):
             assert output_dm_2 in code
 
 
-def test_aX_plus_Y_by_value():
+def test_aX_plus_Y_by_value():  # pylint: disable=invalid-name
     ''' Test that we generate correct code for the builtin
     operation Z = a*X + Y when a scalar is passed by value'''
     _, invoke_info = parse(
@@ -2250,7 +2254,7 @@ def test_aX_plus_Y_by_value():
             assert output_dm_2 in code
 
 
-def test_aX_plus_bY_by_value():
+def test_aX_plus_bY_by_value():  # pylint: disable=invalid-name
     ''' Test that we generate correct code for the builtin
     operation Z = a*X + b*Y when scalars 'a' and 'b' are passed by value'''
     _, invoke_info = parse(
@@ -2510,7 +2514,7 @@ def test_builtin_set_plus_normal():
 # ------------- Builtins with reductions ------------------------------------ #
 
 
-def test_multi_builtin_single_invoke():
+def test_multi_builtin_single_invoke():  # pylint: disable=invalid-name
     '''Test that multiple builtins, including one with reductions,
     produce correct code'''
     for distmem in [False, True]:

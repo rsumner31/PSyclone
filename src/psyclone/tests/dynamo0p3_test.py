@@ -40,16 +40,19 @@
 
 ''' This module tests the Dynamo 0.3 API using pytest. '''
 
+# Since this is a file containing tests which often have to get in and
+# change the internal state of objects we disable pylint's warning
+# about such accesses
+# pylint: disable=protected-access
+
 # imports
-from __future__ import absolute_import
 import os
 import pytest
 from psyclone.parse import parse, ParseError
 from psyclone.psyGen import PSyFactory, GenerationError
-from psyclone.dynamo0p3 import DynKernMetadata, DynKern, \
-    DynLoop, DynGlobalSum, HaloReadAccess, FunctionSpace, \
-    VALID_STENCIL_TYPES, VALID_SCALAR_NAMES, \
-    DISCONTINUOUS_FUNCTION_SPACES
+from psyclone.dynamo0p3 import DynKernMetadata, DynKern, DynLoop, \
+    FunctionSpace, VALID_STENCIL_TYPES, VALID_SCALAR_NAMES, \
+    DynGlobalSum, HaloReadAccess
 from psyclone.transformations import LoopFuseTrans
 from psyclone.gen_kernel_stub import generate
 import fparser
@@ -61,7 +64,7 @@ BASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          "test_files", "dynamo0p3")
 
 
-def test_get_op_wrong_name():
+def test_get_op_wrong_name():  # pylint: disable=invalid-name
     ''' Tests that the get_operator_name() utility raises an error
     if passed the name of something that is not a valid operator '''
     from psyclone.dynamo0p3 import get_fs_operator_name
@@ -70,7 +73,7 @@ def test_get_op_wrong_name():
     assert "Unsupported name 'not_an_op' found" in str(err)
 
 
-def test_get_op_orientation_name():
+def test_get_op_orientation_name():  # pylint: disable=invalid-name
     ''' Test that get_operator_name() works for the orientation operator '''
     from psyclone.dynamo0p3 import get_fs_operator_name
     name = get_fs_operator_name("gh_orientation", FunctionSpace("w3", None))
@@ -107,7 +110,7 @@ end module testkern_qr
 # functions
 
 
-def test_arg_descriptor_wrong_type():
+def test_arg_descriptor_wrong_type():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the argument descriptor
     metadata is not of type arg_type. '''
     fparser.logging.disable('CRITICAL')
@@ -121,7 +124,7 @@ def test_arg_descriptor_wrong_type():
         in str(excinfo.value)
 
 
-def test_arg_descriptor_vector_str():
+def test_arg_descriptor_vector_str():  # pylint: disable=invalid-name
     ''' Test the str method of an argument descriptor containing a vector '''
     fparser.logging.disable('CRITICAL')
     # Change the meta-data so that the second argument is a vector
@@ -138,7 +141,7 @@ def test_arg_descriptor_vector_str():
     assert expected in dkm_str
 
 
-def test_ad_scalar_type_too_few_args():
+def test_ad_scalar_type_too_few_args():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the argument descriptor
     metadata for a real or an integer scalar has fewer than 2 args. '''
     fparser.logging.disable('CRITICAL')
@@ -153,7 +156,7 @@ def test_ad_scalar_type_too_few_args():
             in str(excinfo.value)
 
 
-def test_ad_scalar_type_too_many_args():
+def test_ad_scalar_type_too_many_args():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the argument descriptor
     metadata for a real or an integer scalar has more than 2 args. '''
     fparser.logging.disable('CRITICAL')
@@ -168,7 +171,7 @@ def test_ad_scalar_type_too_many_args():
             in str(excinfo.value)
 
 
-def test_ad_scalar_type_no_write():
+def test_ad_scalar_type_no_write():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the argument descriptor
     metadata for a real or an integer scalar specifies GH_WRITE '''
     fparser.logging.disable('CRITICAL')
@@ -183,7 +186,7 @@ def test_ad_scalar_type_no_write():
                 "(['gh_sum']) but found 'gh_write'" in str(excinfo.value))
 
 
-def test_ad_scalar_type_no_inc():
+def test_ad_scalar_type_no_inc():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the argument descriptor
     metadata for a real or an integer scalar specifies GH_INC '''
     fparser.logging.disable('CRITICAL')
@@ -198,7 +201,7 @@ def test_ad_scalar_type_no_inc():
                 "(['gh_sum']) but found 'gh_inc'" in str(excinfo.value))
 
 
-def test_ad_int_scalar_type_no_sum():
+def test_ad_int_scalar_type_no_sum():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the argument descriptor
     metadata for an integer scalar specifies GH_SUM (reduction) '''
     fparser.logging.disable('CRITICAL')
@@ -212,7 +215,7 @@ def test_ad_int_scalar_type_no_sum():
             "argument, but 'gh_integer' was found" in str(excinfo.value))
 
 
-def test_ad_field_type_too_few_args():
+def test_ad_field_type_too_few_args():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the argument descriptor
     metadata for a field has fewer than 3 args. '''
     fparser.logging.disable('CRITICAL')
@@ -226,7 +229,7 @@ def test_ad_field_type_too_few_args():
         in str(excinfo.value)
 
 
-def test_ad_fld_type_too_many_args():
+def test_ad_fld_type_too_many_args():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the argument descriptor
     metadata has more than 4 args. '''
     fparser.logging.disable('CRITICAL')
@@ -240,7 +243,7 @@ def test_ad_fld_type_too_many_args():
         in str(excinfo.value)
 
 
-def test_ad_fld_type_1st_arg():
+def test_ad_fld_type_1st_arg():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the 1st argument is
     invalid'''
     fparser.logging.disable('CRITICAL')
@@ -254,7 +257,7 @@ def test_ad_fld_type_1st_arg():
         'argument type' in str(excinfo.value)
 
 
-def test_ad_op_type_too_few_args():
+def test_ad_op_type_too_few_args():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the operator descriptor
     metadata has fewer than 4 args. '''
     fparser.logging.disable('CRITICAL')
@@ -267,7 +270,7 @@ def test_ad_op_type_too_few_args():
     assert 'meta_arg entry must have 4 arguments' in str(excinfo.value)
 
 
-def test_ad_op_type_too_many_args():
+def test_ad_op_type_too_many_args():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the operator descriptor
     metadata has more than 4 args. '''
     fparser.logging.disable('CRITICAL')
@@ -280,7 +283,7 @@ def test_ad_op_type_too_many_args():
     assert 'meta_arg entry must have 4 arguments' in str(excinfo.value)
 
 
-def test_ad_op_type_wrong_3rd_arg():
+def test_ad_op_type_wrong_3rd_arg():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the 3rd entry in the operator
     descriptor metadata is invalid. '''
     fparser.logging.disable('CRITICAL')
@@ -294,7 +297,7 @@ def test_ad_op_type_wrong_3rd_arg():
             "a valid function space name" in str(excinfo.value))
 
 
-def test_ad_op_type_1st_arg_not_space():
+def test_ad_op_type_1st_arg_not_space():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when the operator descriptor
     metadata contains something that is not a valid space. '''
     fparser.logging.disable('CRITICAL')
@@ -308,7 +311,7 @@ def test_ad_op_type_1st_arg_not_space():
         str(excinfo.value)
 
 
-def test_ad_invalid_type():
+def test_ad_invalid_type():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when an invalid descriptor type
     name is provided as the first argument. '''
     fparser.logging.disable('CRITICAL')
@@ -321,7 +324,7 @@ def test_ad_invalid_type():
         in str(excinfo.value)
 
 
-def test_ad_invalid_access_type():
+def test_ad_invalid_access_type():  # pylint: disable=invalid-name
     ''' Tests that an error is raised when an invalid access
     name is provided as the second argument. '''
     fparser.logging.disable('CRITICAL')
@@ -487,7 +490,7 @@ def test_fsdesc_fs_not_in_argdesc():
         'meta_args' in str(excinfo)
 
 
-def test_missing_shape_both():
+def test_missing_shape_both():  # pylint: disable=invalid-name
     ''' Check that we raise the correct error if a kernel requiring
     quadrature/evaluator fails to specify the shape of the evaluator '''
     fparser.logging.disable('CRITICAL')
@@ -504,7 +507,7 @@ def test_missing_shape_both():
             "for kernel 'testkern_qr_type'" in str(excinfo))
 
 
-def test_missing_shape_basis_only():
+def test_missing_shape_basis_only():  # pylint: disable=invalid-name
     ''' Check that we raise the correct error if a kernel specifying
     that it needs gh_basis fails to specify the shape of the evaluator '''
     fparser.logging.disable('CRITICAL')
@@ -529,7 +532,7 @@ def test_missing_shape_basis_only():
             "for kernel 'testkern_qr_type'" in str(excinfo))
 
 
-def test_missing_eval_shape_diff_basis_only():
+def test_missing_eval_shape_diff_basis_only():  # pylint: disable=invalid-name
     ''' Check that we raise the correct error if a kernel specifying
     that it needs gh_diff_basis fails to specify the shape of the evaluator '''
     fparser.logging.disable('CRITICAL')
@@ -817,7 +820,7 @@ def test_field_fs():
         "    CONTAINS\n"
         "    SUBROUTINE invoke_0_testkern_fs_type(f1, f2, m1, m2, f3, f4, "
         "m3, m4)\n"
-        "      USE testkern_fs_mod, ONLY: testkern_fs_code\n"
+        "      USE testkern_fs, ONLY: testkern_code\n"
         "      USE mesh_mod, ONLY: mesh_type\n"
         "      TYPE(field_type), intent(inout) :: f1, f3\n"
         "      TYPE(field_type), intent(in) :: f2, m1, m2, f4, m3, m4\n"
@@ -926,7 +929,7 @@ def test_field_fs():
         "      !\n"
         "      DO cell=1,mesh%get_last_halo_cell(1)\n"
         "        !\n"
-        "        CALL testkern_fs_code(nlayers, f1_proxy%data, f2_proxy%data, "
+        "        CALL testkern_code(nlayers, f1_proxy%data, f2_proxy%data, "
         "m1_proxy%data, m2_proxy%data, f3_proxy%data, f4_proxy%data, "
         "m3_proxy%data, m4_proxy%data, ndf_w1, undf_w1, map_w1(:,cell), "
         "ndf_w2, undf_w2, "
@@ -940,7 +943,6 @@ def test_field_fs():
         "      !\n"
         "      CALL f1_proxy%set_dirty()\n"
         "      CALL f3_proxy%set_dirty()\n"
-        "      CALL f3_proxy%set_clean(1)\n"
         "      !\n"
         "      !\n"
         "    END SUBROUTINE invoke_0_testkern_fs_type\n"
@@ -1649,7 +1651,7 @@ def test_operator_nofield(tmpdir, f90, f90flags):
             "weights_xy_qr, weights_z_qr)" in gen_code_str)
 
 
-def test_operator_nofield_different_space(
+def test_operator_nofield_different_space(  # pylint: disable=invalid-name
         tmpdir, f90, f90flags):
     ''' tests that an operator with no field on different spaces is
     implemented correctly in the PSy layer '''
@@ -1693,7 +1695,7 @@ def test_operator_nofield_scalar():
             "weights_xy_qr, weights_z_qr)" in gen)
 
 
-def test_operator_nofield_scalar_deref(
+def test_operator_nofield_scalar_deref(  # pylint: disable=invalid-name
         tmpdir, f90, f90flags):
     ''' Tests that an operator with no field and a
     scalar argument is implemented correctly in the PSy layer when both
@@ -1762,7 +1764,7 @@ def test_operator_orientation(tmpdir, f90, f90flags):
             "weights_z_qr)" in gen_str)
 
 
-def test_op_orient_different_space(
+def test_op_orient_different_space(  # pylint: disable=invalid-name
         tmpdir, f90, f90flags):
     '''tests that an operator on different spaces requiring orientation
     information is implemented correctly in the PSy layer. '''
@@ -1932,7 +1934,7 @@ def test_any_space_2():
         "ace_1_a, undf_any_space_1_a, map_any_space_1_a(:,cell))") != -1
 
 
-def test_op_any_space_different_space_1():
+def test_op_any_space_different_space_1():  # pylint: disable=invalid-name
     ''' tests that any_space is implemented correctly in the PSy
     layer. Includes different spaces for an operator and no other
     fields.'''
@@ -1947,7 +1949,7 @@ def test_op_any_space_different_space_1():
         "ndf_any_space_1_a = a_proxy%fs_to%get_ndf()") != -1
 
 
-def test_op_any_space_different_space_2(
+def test_op_any_space_different_space_2(  # pylint: disable=invalid-name
         tmpdir, f90, f90flags):
     ''' tests that any_space is implemented correctly in the PSy
     layer in a more complicated example. '''
@@ -1995,7 +1997,7 @@ def test_invoke_uniq_declns():
         in str(excinfo.value)
 
 
-def test_invoke_uniq_declns_invalid_access():
+def test_invoke_uniq_declns_invalid_access():  # pylint: disable=invalid-name
     ''' tests that we raise an error when Invoke.unique_declarations() is
     called for an invalid access type '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2022,7 +2024,7 @@ def test_invoke_uniq_proxy_declns():
         in str(excinfo.value)
 
 
-def test_uniq_proxy_declns_invalid_access():
+def test_uniq_proxy_declns_invalid_access():  # pylint: disable=invalid-name
     ''' tests that we raise an error when DynInvoke.unique_proxy_declarations()
     is called for an invalid access type '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2050,7 +2052,7 @@ def test_dyninvoke_first_access():
         in str(excinfo.value)
 
 
-def test_dyninvoke_uniq_declns_inv_type():
+def test_dyninvoke_uniq_declns_inv_type():  # pylint: disable=invalid-name
     ''' tests that we raise an error when DynInvoke.unique_declns_by_intent()
     is called for an invalid argument type '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2063,7 +2065,7 @@ def test_dyninvoke_uniq_declns_inv_type():
         in str(excinfo.value)
 
 
-def test_dyninvoke_uniq_declns_intent_fields():
+def test_dyninvoke_uniq_declns_intent_fields():  # pylint: disable=invalid-name
     ''' tests that DynInvoke.unique_declns_by_intent() returns the correct
     list of arguments for gh_fields '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2076,7 +2078,7 @@ def test_dyninvoke_uniq_declns_intent_fields():
     assert args['in'] == ['f2', 'm1', 'm2']
 
 
-def test_dyninvoke_uniq_declns_intent_real():
+def test_dyninvoke_uniq_declns_intent_real():  # pylint: disable=invalid-name
     ''' tests that DynInvoke.unique_declns_by_intent() returns the correct
     list of arguments for gh_real '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2089,7 +2091,7 @@ def test_dyninvoke_uniq_declns_intent_real():
     assert args['in'] == ['a']
 
 
-def test_dyninvoke_uniq_declns_intent_int():
+def test_dyninvoke_uniq_declns_intent_int():  # pylint: disable=invalid-name
     ''' tests that DynInvoke.unique_declns_by_intent() returns the correct
     list of arguments for gh_integer '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2102,7 +2104,7 @@ def test_dyninvoke_uniq_declns_intent_int():
     assert args['in'] == ['istep']
 
 
-def test_dyninvoke_uniq_declns_intent_ops():
+def test_dyninvoke_uniq_declns_intent_ops():  # pylint: disable=invalid-name
     ''' tests that DynInvoke.unique_declns_by_intent() returns the correct
     list of arguments for operator arguments '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2129,7 +2131,7 @@ def test_dyninvoke_arg_for_fs():
         in str(excinfo.value)
 
 
-def test_kernel_specific(): #### Effect from w2v changes??
+def test_kernel_specific():
     ''' Test that a call to enforce boundary conditions is *not* added
     following a call to the matrix_vector_kernel_type kernel. Boundary
     conditions are now explicity specified in the Algorithm as required. '''
@@ -2164,7 +2166,7 @@ def test_kernel_specific(): #### Effect from w2v changes??
     assert output6 not in generated_code
 
 
-def test_multi_kernel_specific(): #### Effect from w2v changes??
+def test_multi_kernel_specific():
     '''Test that a call to enforce boundary conditions is *not* added following
     multiple calls to the matrix_vector_kernel_type kernel. Boundary conditions
     must now be explicitly specified as part of the Algorithm. '''
@@ -2326,7 +2328,7 @@ def test_operator_bc_kernel_fld_err(monkeypatch):
             in str(excinfo)
 
 
-def test_operator_bc_kernel_multi_args_err():
+def test_operator_bc_kernel_multi_args_err():  # pylint: disable=invalid-name
     ''' test that we reject the recognised operator boundary conditions
     kernel if it has more than one argument '''
     import copy
@@ -2356,7 +2358,7 @@ def test_operator_bc_kernel_multi_args_err():
                 "should only have 1 (an LMA operator)") in str(excinfo)
 
 
-def test_operator_bc_kernel_wrong_access_err():
+def test_operator_bc_kernel_wrong_access_err():  # pylint: disable=invalid-name
     ''' test that we reject the recognised operator boundary conditions
     kernel if its operator argument has the wrong access type '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2412,7 +2414,7 @@ def test_multikernel_invoke_qr():
     assert str(generated_code).count("CALL testkern_qr_code") == 2
 
 
-def test_mkern_invoke_vec_fields(): #### Effect from w2v changes??
+def test_mkern_invoke_vec_fields():
     ''' Test that correct code is produced when there are multiple
     kernels within an invoke with vector fields '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2428,7 +2430,7 @@ def test_mkern_invoke_vec_fields(): #### Effect from w2v changes??
     assert str(generated_code).find(output2) == -1
 
 
-def test_multikern_invoke_orient(): #### Effect from w2v changes??
+def test_multikern_invoke_orient():
     ''' Test that correct code is produced when there are multiple
     kernels within an invoke with orientation '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2445,7 +2447,7 @@ def test_multikern_invoke_orient(): #### Effect from w2v changes??
     assert str(generated_code).find(output2) == -1
 
 
-def test_multikern_invoke_oper(): #### Effect from w2v changes??
+def test_multikern_invoke_oper():
     ''' Test that correct code is produced when there are multiple
     kernels within an invoke with operators '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2534,7 +2536,7 @@ def test_multikern_invoke_any_space(tmpdir, f90, f90flags):
             "weights_xy_qr, weights_z_qr" in gen)
 
 
-def test_mkern_invoke_multiple_any_spaces(
+def test_mkern_invoke_multiple_any_spaces(  # pylint: disable=invalid-name
         tmpdir, f90, f90flags):
     ''' Test that we generate correct code when there are multiple
     kernels within an invoke with kernel fields declared as
@@ -2658,12 +2660,12 @@ def test_stub_invalid_api():
     assert "Unsupported API 'dynamo0.1' specified" in str(excinfo.value)
 
 
-def test_stub_file_content_not_fortran():
+def test_stub_file_content_not_fortran():  # pylint: disable=invalid-name
     ''' fail if the kernel file does not contain fortran '''
     with pytest.raises(ParseError) as excinfo:
         generate(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                               "dynamo0p3_test.py"), api="dynamo0.3")
-    assert 'no parse pattern found' \
+    assert 'the file does not contain a module. Is it a Kernel file?' \
         in str(excinfo.value)
 
 
@@ -2672,7 +2674,7 @@ def test_stub_file_fortran_invalid():
     with pytest.raises(ParseError) as excinfo:
         generate(os.path.join(BASE_PATH, "testkern_invalid_fortran.F90"),
                  api="dynamo0.3")
-    assert 'contain <== no parse pattern found' in str(excinfo.value)
+    assert 'invalid Fortran' in str(excinfo.value)
 
 
 def test_file_fortran_not_kernel():
@@ -2706,7 +2708,6 @@ def test_kernel_datatype_not_found():
                  api="dynamo0.3")
     assert 'Kernel type testkern_type does not exist' in str(excinfo.value)
 
-
 SIMPLE = (
     "  MODULE simple_mod\n"
     "    IMPLICIT NONE\n"
@@ -2734,13 +2735,12 @@ def test_stub_generate_working():
     assert str(result).find(SIMPLE) != -1
 
 
-def test_stub_generate_working_noapi():
+def test_stub_generate_working_noapi():  # pylint: disable=invalid-name
     ''' check that the stub generate produces the expected output when
     we use the default api (which should be dynamo0.3)'''
     result = generate(os.path.join(BASE_PATH, "simple.f90"))
     print result
     assert str(result).find(SIMPLE) != -1
-
 
 SIMPLE_WITH_SCALARS = (
     "  MODULE simple_with_scalars_mod\n"
@@ -2792,7 +2792,7 @@ SCALAR_SUMS = (
     "  END MODULE testkern_multiple_scalar_sums_mod")
 
 
-def test_stub_generate_with_scalar_sums():
+def test_stub_generate_with_scalar_sums():  # pylint: disable=invalid-name
     '''check that the stub generator raises an exception when a kernel has
     a reduction (since these are not permitted for user-supplied kernels)'''
     with pytest.raises(ParseError) as err:
@@ -2869,7 +2869,6 @@ def test_intent():
     print output
     print str(generated_code)
     assert str(generated_code).find(output) != -1
-
 
 # fields : spaces
 SPACES = '''
@@ -2955,7 +2954,6 @@ def test_spaces():
     print output
     print str(generated_code)
     assert str(generated_code).find(output) != -1
-
 
 # fields : vectors
 VECTORS = '''
@@ -3127,7 +3125,7 @@ end module dummy_mod
 '''
 
 
-def test_stub_operator_different_spaces():
+def test_stub_operator_different_spaces():  # pylint: disable=invalid-name
     ''' test that the correct function spaces are provided in the
     correct order when generating a kernel stub with an operator on
     different spaces '''
@@ -3140,7 +3138,6 @@ def test_stub_operator_different_spaces():
     assert "dimension(ndf_w0,ndf_w1,op_1_ncell_3d)" in result
 
 # orientation : spaces
-
 
 ORIENTATION_OUTPUT = (
     "    SUBROUTINE dummy_orientation_code(cell, nlayers, field_1_w0, "
@@ -3196,7 +3193,7 @@ def test_orientation_stubs():
     assert str(generated_code).find(ORIENTATION_OUTPUT) != -1
 
 
-def test_enforce_bc_kernel_stub_gen():
+def test_enforce_bc_kernel_stub_gen():  # pylint: disable=invalid-name
     ''' Test that the enforce_bc_kernel boundary layer argument modification
     is handled correctly for kernel stubs'''
     ast = fpapi.parse(os.path.join(BASE_PATH, "enforce_bc_kernel_mod.f90"),
@@ -3230,7 +3227,7 @@ def test_enforce_bc_kernel_stub_gen():
     assert str(generated_code).find(output) != -1
 
 
-def test_enforce_op_bc_kernel_stub_gen():
+def test_enforce_op_bc_kernel_stub_gen():  # pylint: disable=invalid-name
     ''' Test that the enforce_operator_bc_kernel boundary dofs argument
     modification is handled correctly for kernel stubs'''
     ast = fpapi.parse(os.path.join(BASE_PATH,
@@ -3265,7 +3262,6 @@ def test_enforce_op_bc_kernel_stub_gen():
 # note, we do not need a separate test for qr as it is implicitly
 # tested for in the above examples.
 # fields : intent
-
 
 SUB_NAME = '''
 module dummy_mod
@@ -3455,7 +3451,6 @@ def test_stub_stencil_multi():
 
     assert result2 in generated_code
 
-
 STENCIL_CODE = '''
 module stencil_mod
   type, extends(kernel_type) :: stencil_type
@@ -3486,7 +3481,7 @@ def test_stencil_metadata():
     assert stencil_descriptor_1.stencil['extent'] is None
 
 
-def test_field_metadata_too_many_arguments():
+def test_field_metadata_too_many_arguments():  # pylint: disable=invalid-name
     '''Check that we raise an exception if more than 4 arguments are
     provided in the metadata for a gh_field arg_type.'''
     result = STENCIL_CODE.replace(
@@ -3579,7 +3574,7 @@ def test_invalid_stencil_form_6():
         in str(excinfo.value)
 
 
-def test_invalid_stencil_first_arg_1():
+def test_invalid_stencil_first_arg_1():  # pylint: disable=invalid-name
     '''Check that we raise an exception if the value of the stencil type in
     stencil(<type>[,<extent>]) is not valid and is an integer'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(1)", 1)
@@ -3590,7 +3585,7 @@ def test_invalid_stencil_first_arg_1():
     assert "is a literal" in str(excinfo.value)
 
 
-def test_invalid_stencil_first_arg_2():
+def test_invalid_stencil_first_arg_2():  # pylint: disable=invalid-name
     '''Check that we raise an exception if the value of the stencil type in
     stencil(<type>[,<extent>]) is not valid and is a name'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(cros)", 1)
@@ -3600,7 +3595,7 @@ def test_invalid_stencil_first_arg_2():
     assert "not one of the valid types" in str(excinfo.value)
 
 
-def test_invalid_stencil_first_arg_3():
+def test_invalid_stencil_first_arg_3():  # pylint: disable=invalid-name
     '''Check that we raise an exception if the value of the stencil type in
     stencil(<type>[,<extent>]) is not valid and has brackets'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(x1d(xx))", 1)
@@ -3611,7 +3606,7 @@ def test_invalid_stencil_first_arg_3():
     assert "includes brackets" in str(excinfo.value)
 
 
-def test_invalid_stencil_second_arg_1():
+def test_invalid_stencil_second_arg_1():  # pylint: disable=invalid-name
     '''Check that we raise an exception if the value of the stencil extent in
     stencil(<type>[,<extent>]) is not an integer'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(x1d,x1d)", 1)
@@ -3622,7 +3617,7 @@ def test_invalid_stencil_second_arg_1():
     assert "is not an integer" in str(excinfo.value)
 
 
-def test_invalid_stencil_second_arg_2():
+def test_invalid_stencil_second_arg_2():  # pylint: disable=invalid-name
     '''Check that we raise an exception if the value of the stencil extent in
     stencil(<type>[,<extent>]) is less than 1'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(x1d,0)", 1)
@@ -3633,7 +3628,7 @@ def test_invalid_stencil_second_arg_2():
     assert "is less than 1" in str(excinfo.value)
 
 
-def test_unsupported_second_argument():
+def test_unsupported_second_argument():  # pylint: disable=invalid-name
     '''Check that we raise an exception if stencil extent is specified, as
     we do not currently support it'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(x1d,1)", 1)
@@ -3653,7 +3648,7 @@ def test_valid_stencil_types():
         _ = DynKernMetadata(ast)
 
 
-def test_arg_descriptor_funcs_method_error():
+def test_arg_descriptor_funcs_method_error():  # pylint: disable=invalid-name
     ''' Tests that an internal error is raised in DynArgDescriptor03
     when function_spaces is called and the internal type is an
     unexpected value. It should not be possible to get to here so we
@@ -3669,7 +3664,7 @@ def test_arg_descriptor_funcs_method_error():
         'not get to here' in str(excinfo.value)
 
 
-def test_DynKernelArgument_intent_invalid():
+def test_DynKernelArgument_intent_invalid():  # pylint: disable=invalid-name
     '''Tests that an error is raised in DynKernelArgument when an invalid
     intent value is found. Tests with and without distributed memory '''
     _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
@@ -3778,7 +3773,7 @@ def test_no_arg_on_space(monkeypatch):
             "name = 'not_a_space_name')" in str(excinfo))
 
 
-def test_arg_descriptor_func_method_error():
+def test_arg_descriptor_func_method_error():  # pylint: disable=invalid-name
     ''' Tests that an internal error is raised in DynArgDescriptor03
     when function_space is called and the internal type is an
     unexpected value. It should not be possible to get to here so we
@@ -3811,7 +3806,7 @@ def test_arg_descriptor_fld_str():
     assert expected_output in result
 
 
-def test_arg_descriptor_real_scalar_str():
+def test_arg_descriptor_real_scalar_str():  # pylint: disable=invalid-name
     ''' Tests that the string method for DynArgDescriptor03 works as
     expected for a real scalar argument'''
     fparser.logging.disable('CRITICAL')
@@ -3827,7 +3822,7 @@ def test_arg_descriptor_real_scalar_str():
     assert expected_output in result
 
 
-def test_arg_descriptor_int_scalar_str():
+def test_arg_descriptor_int_scalar_str():  # pylint: disable=invalid-name
     ''' Tests that the string method for DynArgDescriptor03 works as
     expected for an integer scalar argument'''
     fparser.logging.disable('CRITICAL')
@@ -3872,7 +3867,7 @@ def test_arg_descriptor_repr():
         in result
 
 
-def test_arg_desc_func_space_tofrom_err():
+def test_arg_desc_func_space_tofrom_err():  # pylint: disable=invalid-name
     ''' Tests that an internal error is raised in DynArgDescriptor03
     when function_space_to or function_space_from is called and the
     internal type is not gh_operator.'''
@@ -3921,7 +3916,7 @@ def test_mangle_function_space():
     assert name == "any_space_2_f2"
 
 
-def test_no_mangle_specified_function_space():
+def test_no_mangle_specified_function_space():  # pylint: disable=invalid-name
     ''' Test that we do not name-mangle a function space that is not
     any_space '''
     from psyclone.dynamo0p3 import mangle_fs_name
@@ -3935,7 +3930,7 @@ def test_no_mangle_specified_function_space():
     assert name == "w2"
 
 
-def test_fsdescriptors_get_descriptor():
+def test_fsdescriptors_get_descriptor():  # pylint: disable=invalid-name
     ''' Test that FSDescriptors.get_descriptor() raises the expected error
     when passed a function space for which there is no corresponding kernel
     argument '''
@@ -3974,9 +3969,7 @@ def test_arg_descriptor_init_error():
         _ = DynArgDescriptor03(arg_type)
     assert 'Internal error in DynArgDescriptor03.__init__' \
         in str(excinfo.value)
-    # pylint: disable=invalid-name
     VALID_ARG_TYPE_NAMES = keep
-    # pylint: enable=invalid-name
 
 
 def test_func_descriptor_repr():
@@ -4072,7 +4065,7 @@ def test_halo_dirty_3():
     assert str(generated_code).count("CALL f1_proxy%set_dirty()") == 2
 
 
-def test_halo_dirty_4(): #### Effect from w2v changes??
+def test_halo_dirty_4():
     ''' check halo_dirty calls with field vectors '''
     _, invoke_info = parse(os.path.join(BASE_PATH, "8_vector_field_2.f90"),
                            api="dynamo0.3")
@@ -4182,7 +4175,7 @@ def test_halo_exchange_inc():
     assert result.count("halo_exchange") == 7
 
 
-def test_no_halo_exchange_for_operator():
+def test_no_halo_exchange_for_operator():  # pylint: disable=invalid-name
     ''' Test that no halo exchange is generated before a kernel that reads
     from an operator '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -4210,7 +4203,7 @@ def test_no_set_dirty_for_operator():
     assert "is_dirty" not in result
 
 
-def test_halo_exchange_different_spaces():
+def test_halo_exchange_different_spaces():  # pylint: disable=invalid-name
     '''test that all of our different function spaces with a stencil
     access result in halo calls including any_space'''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -4222,7 +4215,7 @@ def test_halo_exchange_different_spaces():
     assert result.count("halo_exchange") == 9
 
 
-def test_halo_exchange_vectors_1(): #### Effect from w2v changes??
+def test_halo_exchange_vectors_1():
     ''' test that halo exchange produces correct code for vector
     fields. Test a field with gh_inc '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -4242,7 +4235,7 @@ def test_halo_exchange_vectors_1(): #### Effect from w2v changes??
     assert expected in result
 
 
-def test_halo_exchange_vectors(): #### Effect from w2v changes??
+def test_halo_exchange_vectors():
     ''' test that halo exchange produces correct code for vector
     fields. Test both a field with a stencil and a field with gh_inc '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -4289,7 +4282,7 @@ def test_halo_exchange_depths():
     assert expected in result
 
 
-def test_halo_exchange_depths_gh_inc():
+def test_halo_exchange_depths_gh_inc():  # pylint: disable=invalid-name
     ''' test that halo exchange includes the correct halo depth when
     we have a gh_inc as this increases the required depth by 1 (as
     redundant computation is performed in the l1 halo) '''
@@ -4331,20 +4324,18 @@ def test_stencil_read_only():
     assert "a stencil must be read only" in str(excinfo.value)
 
 
-def test_fs_discontinuous_and_inc_error():
-    ''' Test that an error is raised if a discontinuous function space
-    and gh_inc are provided for the same field in the metadata '''
+def test_w3_and_inc_error():
+    '''test that an error is raised if w3 and gh_inc are provided for the
+    same field in the metadata '''
     fparser.logging.disable('CRITICAL')
-    for fsname in DISCONTINUOUS_FUNCTION_SPACES:
-        code = CODE.replace("arg_type(gh_field,gh_read, w3)",
-                            "arg_type(gh_field,gh_inc, "
-                            + fsname + ")", 1)
-        ast = fpapi.parse(code, ignore_comments=False)
-        with pytest.raises(ParseError) as excinfo:
-            _ = DynKernMetadata(ast, name="testkern_qr_type")
-        assert ("It does not make sense for a quantity on a discontinuous "
-                "space (" + fsname + ") to have a 'gh_inc' access"
-                in str(excinfo.value))
+    code = CODE.replace("arg_type(gh_field,gh_read, w3)",
+                        "arg_type(gh_field,gh_inc, w3)", 1)
+    ast = fpapi.parse(code, ignore_comments=False)
+    with pytest.raises(ParseError) as excinfo:
+        _ = DynKernMetadata(ast, name="testkern_qr_type")
+    assert (
+        "It does not make sense for a quantity on a discontinuous space "
+        "(w3) to have a 'gh_inc' access" in str(excinfo.value))
 
 
 def test_halo_exchange_view(capsys):
@@ -4815,7 +4806,7 @@ def test_stencil_region_unsupported():
             str(excinfo.value)
 
 
-def test_single_stencil_xory1d_literal():
+def test_single_stencil_xory1d_literal():  # pylint: disable=invalid-name
     '''test extent value is used correctly from the algorithm layer when
     it is a literal value so is not passed by argument'''
     for dist_mem in [False, True]:
@@ -4870,7 +4861,7 @@ def test_single_stencil_xory1d_literal():
         assert output6 in result
 
 
-def test_single_stencil_xory1d_literal_mixed():
+def test_single_stencil_xory1d_literal_mixed():  # pylint: disable=invalid-name
     '''test extent value is used correctly from the algorithm layer when
     it is a literal value so is not passed by argument and the case of the
     literal is specified in mixed case'''
@@ -5077,7 +5068,7 @@ def test_multiple_stencil_same_name():
         assert output5 in result
 
 
-def test_multi_stencil_same_name_direction():
+def test_multi_stencil_same_name_direction():  # pylint: disable=invalid-name
     '''test the case where there is more than one stencil in a kernel with
     the same name for direction'''
     for dist_mem in [False, True]:
@@ -5158,7 +5149,7 @@ def test_multi_stencil_same_name_direction():
         assert output5 in result
 
 
-def test_multi_kerns_stencils_diff_fields():
+def test_multi_kerns_stencils_diff_fields():  # pylint: disable=invalid-name
     '''Test the case where we have multiple kernels with stencils and
     different fields for each. We also test extent names by having both
     shared and individual names.'''
@@ -5371,7 +5362,7 @@ def test_two_stencils_same_field():
         assert output7 in result
 
 
-def test_stencils_same_field_literal_extent():
+def test_stencils_same_field_literal_extent():  # pylint: disable=invalid-name
     '''Test three Kernels within an invoke, with the same field having a
     stencil access in each kernel and the extent being passed as a
     literal value. Extent is the same in two kernels and different in
@@ -5432,7 +5423,7 @@ def test_stencils_same_field_literal_extent():
             assert "CALL f4_proxy%halo_exchange(depth=1)" in result
 
 
-def test_stencils_same_field_literal_direct():
+def test_stencils_same_field_literal_direct():  # pylint: disable=invalid-name
     '''Test three Kernels within an invoke, with the same field having a
     stencil access in each kernel and the direction being passed as a
     literal value. In two kernels the direction value is the same and
@@ -5528,7 +5519,7 @@ def test_stencil_extent_specified():
             "This is not coded for." in str(err))
 
 
-def test_haloexchange_unknown_halo_depth():
+def test_haloexchange_unknown_halo_depth():  # pylint: disable=invalid-name
     '''If a stencil extent is provided in the kernel metadata then the
     value is stored in an instance of the DynHaloExchange class. This test
     checks that the value is stored as expected (although stencil extents
@@ -5548,7 +5539,7 @@ def test_haloexchange_unknown_halo_depth():
     assert halo_exchange._compute_halo_depth() == '11'
 
 
-def test_haloexchange_correct_parent():
+def test_haloexchange_correct_parent():  # pylint: disable=invalid-name
     '''Test that a dynamo haloexchange has the correct parent once it has
     been added to a schedule.'''
     _, invoke_info = parse(
@@ -5560,7 +5551,7 @@ def test_haloexchange_correct_parent():
         assert child.parent == schedule
 
 
-def test_one_kern_multi_field_same_stencil():
+def test_one_kern_multi_field_same_stencil():  # pylint: disable=invalid-name
     '''This test checks for the case where we have the same stencil used
     by more than one field in a kernel'''
     for dist_mem in [False, True]:
@@ -5621,7 +5612,7 @@ def test_one_kern_multi_field_same_stencil():
         assert output5 in result
 
 
-def test_single_kernel_any_space_stencil():
+def test_single_kernel_any_space_stencil():  # pylint: disable=invalid-name
     '''This is a test for stencils and any_space within a single kernel
     and between kernels. We test when any_space is the same and when
     it is different within kernels and between kernels for the case of
@@ -5675,7 +5666,7 @@ def test_single_kernel_any_space_stencil():
 
 
 @pytest.mark.xfail(reason="stencils and any_space produces too many dofmaps")
-def test_multi_kernel_any_space_stencil_1():
+def test_multi_kernel_any_space_stencil_1():  # pylint: disable=invalid-name
     '''This is a test for stencils and any_space with two kernels. We test
     when any_space is the same and when it is different for the same
     field. In our example we should have a single dofmap. However, at
@@ -5868,7 +5859,7 @@ def test_stencil_args_unique_3():
             assert "CALL f4_proxy%halo_exchange(depth=1)" in result
 
 
-def test_dynloop_load_unexpected_func_space():
+def test_dynloop_load_unexpected_func_space():  # pylint: disable=invalid-name
     '''The load function of an instance of the dynloop class raises an
     error if an unexpexted function space is found. This test makes
     sure this error works correctly. It's a little tricky to raise
@@ -5900,11 +5891,11 @@ def test_dynloop_load_unexpected_func_space():
     with pytest.raises(GenerationError) as err:
         loop.load(kernel)
     assert ("Generation Error: Unexpected function space found. Expecting "
-            "one of ['w3', 'wtheta', 'w2v', 'w0', 'w1', 'w2', 'w2h', "
+            "one of ['w3', 'w0', 'w1', 'w2', 'wtheta', 'w2h', 'w2v', "
             "'any_w2'] but found 'broken'" in str(err))
 
 
-def test_dynkernargs_unexpect_stencil_extent():
+def test_dynkernargs_unexpect_stencil_extent():  # pylint: disable=invalid-name
     '''This test checks that we raise an error in DynKernelArguments if
     metadata is provided with an extent value. This is a litle tricky to
     raise as the parser does not not allow this to happen. We therefore
@@ -5928,7 +5919,7 @@ def test_dynkernargs_unexpect_stencil_extent():
     assert "extent metadata not yet supported" in str(err)
 
 
-def test_unsupported_halo_read_access():
+def test_unsupported_halo_read_access():  # pylint: disable=invalid-name
     '''This test checks that we raise an error if the halo_read_access
     method finds an upper bound other than halo or ncells. The
     particular issue at the moment is that if inner is specified we do
@@ -5956,7 +5947,7 @@ def test_unsupported_halo_read_access():
             "'inner'." in str(err))
 
 
-def test_dynglobalsum_unsupported_scalar():
+def test_dynglobalsum_unsupported_scalar():  # pylint: disable=invalid-name
     '''Check that an instance of the DynGlobalSum class raises an
     exception if an unsupported scalar type is provided when
     dm=True '''
@@ -6042,7 +6033,7 @@ end module testkern
             "testkern_type" in str(excinfo))
 
 
-def test_multiple_updated_field_args():
+def test_multiple_updated_field_args():  # pylint: disable=invalid-name
     ''' Check that we successfully parse a kernel that writes to more
     than one of its field arguments '''
     fparser.logging.disable('CRITICAL')
@@ -6076,7 +6067,7 @@ def test_multiple_updated_op_args():
     assert count == 2
 
 
-def test_multiple_updated_scalar_args():
+def test_multiple_updated_scalar_args():  # pylint: disable=invalid-name
     ''' Check that we raise the expected exception when we encounter a
     kernel that writes to more than one of its field and scalar arguments '''
     fparser.logging.disable('CRITICAL')
@@ -6091,7 +6082,7 @@ def test_multiple_updated_scalar_args():
             str(excinfo))
 
 
-def test_itn_space_write_w3_w1(): #### Add/modify/rename??
+def test_itn_space_write_w3_w1():  # pylint: disable=invalid-name
     ''' Check that generated loop over cells in the psy layer has the correct
     upper bound when a kernel writes to two fields, the first on a
     discontinuous space and the second on a continuous space. The resulting
@@ -6118,7 +6109,7 @@ def test_itn_space_write_w3_w1(): #### Add/modify/rename??
             assert output in generated_code
 
 
-def test_itn_space_fld_and_op_writers(): #### Add/modify/rename??
+def test_itn_space_fld_and_op_writers():  # pylint: disable=invalid-name
     ''' Check that generated loop over cells in the psy layer has the
     correct upper bound when a kernel writes to both an operator and a
     field, the latter on a discontinuous space and first in the list
@@ -6287,7 +6278,7 @@ def test_kernel_args_has_op():
     assert "op_type must be a valid operator type" in str(excinfo)
 
 
-def test_kernel_stub_invalid_scalar_argument():
+def test_kernel_stub_invalid_scalar_argument():  # pylint: disable=invalid-name
     '''Check that we raise an exception if an unexpected datatype is found
     when using the KernStubArgList scalar method'''
     ast = fpapi.parse(os.path.join(BASE_PATH,
@@ -6312,7 +6303,7 @@ def test_kernel_stub_invalid_scalar_argument():
         "'gh_integer']' but got 'invalid'") in str(excinfo.value)
 
 
-def test_kernel_stub_ind_dofmap_errors():
+def test_kernel_stub_ind_dofmap_errors():  # pylint: disable=invalid-name
     '''Check that we raise the expected exceptions if the wrong arguments
     are supplied to KernelStubArgList.indirection_dofmap() '''
     ast = fpapi.parse(os.path.join(BASE_PATH,
@@ -6339,7 +6330,7 @@ def test_kernel_stub_ind_dofmap_errors():
             "got") in str(excinfo)
 
 
-def test_kerncallarglist_arglist_error():
+def test_kerncallarglist_arglist_error():  # pylint: disable=invalid-name
     '''Check that we raise an exception if we call the arglist method in
     kerncallarglist without first calling the generate method'''
     for distmem in [False, True]:
@@ -6366,7 +6357,7 @@ def test_kerncallarglist_arglist_error():
             "called?") in str(excinfo.value)
 
 
-def test_kernstubarglist_arglist_error():
+def test_kernstubarglist_arglist_error():  # pylint: disable=invalid-name
     '''Check that we raise an exception if we call the arglist method in
     kernstubarglist without first calling the generate method'''
     ast = fpapi.parse(os.path.join(BASE_PATH,
@@ -6457,7 +6448,7 @@ def test_multi_anyw2():
             assert output in generated_code
 
 
-def test_anyw2_vectors(): #### Effect from w2v changes???????
+def test_anyw2_vectors():
     '''Check generated code works correctly when we have any_w2 field
     vectors'''
     _, invoke_info = parse(
@@ -6541,7 +6532,7 @@ def test_stub_generate_with_anyw2():
     assert expected_output in str(result)
 
 
-def test_no_halo_for_discontinous(): #### Add/modify/rename??
+def test_no_halo_for_discontinous():
     '''Test that we do not create halo exchange calls when our loop only
     iterates over owned cells (e.g. it writes to a discontinuous
     field), we only read from a discontinous field and there are no
@@ -6555,7 +6546,7 @@ def test_no_halo_for_discontinous(): #### Add/modify/rename??
     assert "halo_exchange" not in result
 
 
-def test_halo_for_discontinuous(): #### Add/modify/rename??
+def test_halo_for_discontinuous():
     '''Test that we create halo exchange call when our loop iterates over
     owned cells (e.g. it writes to a discontinuous field), we read
     from a continous field, there are no stencil accesses, but we do
@@ -6576,7 +6567,7 @@ def test_halo_for_discontinuous(): #### Add/modify/rename??
     assert "CALL m1_proxy%halo_exchange(depth=1)" in result
 
 
-def test_halo_for_discontinuous_2(): #### Add/modify/rename??
+def test_halo_for_discontinuous_2():
     '''Test that we create halo exchange call when our loop iterates over
     owned cells (e.g. it writes to a discontinuous field), we read
     from a continous field, there are no stencil accesses, and the
@@ -6596,7 +6587,7 @@ def test_halo_for_discontinuous_2(): #### Add/modify/rename??
     assert "CALL m1_proxy%halo_exchange(depth=1)" in result
 
 
-def test_arg_discontinous(): #### Add/modify/rename??
+def test_arg_discontinous():
     '''test that the discontinuous method in the dynamo argument class
     returns the correct values '''
 
@@ -6634,7 +6625,7 @@ def test_arg_discontinous(): #### Add/modify/rename??
     assert not field.discontinuous
 
 
-def test_halo_stencil_redundant_computation():
+def test_halo_stencil_redundant_computation():  # pylint: disable=invalid-name
     '''If a loop contains a kernel with a stencil access and the loop
     computes redundantly into the halo then the value of the stencil
     in the associated halo exchange is returned as type region
@@ -6652,7 +6643,7 @@ def test_halo_stencil_redundant_computation():
     assert stencil_halo_exchange._compute_stencil_type() == "region"
 
 
-def test_halo_same_stencils_no_red_comp():
+def test_halo_same_stencils_no_red_comp():  # pylint: disable=invalid-name
     '''If a halo has two or more different halo reads associated with it
     and the type of stencils are the same and the loops do not
     redundantly compute into the halo then the chosen stencil type for
@@ -6667,7 +6658,7 @@ def test_halo_same_stencils_no_red_comp():
     assert stencil_halo_exchange._compute_stencil_type() == "cross"
 
 
-def test_halo_different_stencils_no_red_comp():
+def test_halo_different_stencils_no_red_comp():  # pylint: disable=invalid-name
     '''If a halo has two or more different halo reads associated with it
     and the type of stencils are different and the loops do not
     redundantly compute into the halo then the chosen stencil type is
@@ -6683,7 +6674,7 @@ def test_halo_different_stencils_no_red_comp():
     assert stencil_halo_exchange._compute_stencil_type() == "region"
 
 
-def test_comp_halo_intern_err(monkeypatch):
+def test_comp_halo_intern_err(monkeypatch):  # pylint: disable=invalid-name
     '''Check that we raise an exception if the compute_halo_read_info method in
     dynhaloexchange does not find any read dependencies. This should
     never be the case. We use monkeypatch to force the exception to be
@@ -6701,7 +6692,7 @@ def test_comp_halo_intern_err(monkeypatch):
             "dependence for a halo exchange") in str(excinfo.value)
 
 
-def test_halo_exch_1_back_dep(monkeypatch):
+def test_halo_exch_1_back_dep(monkeypatch):  # pylint: disable=invalid-name
     '''Check that an internal error is raised if a halo exchange returns
     with more than one write dependency. It should only ever be 0 or 1.'''
     _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
@@ -6724,7 +6715,7 @@ def test_halo_exch_1_back_dep(monkeypatch):
     assert not halo_exchange._compute_halo_write_info()
 
 
-def test_halo_ex_back_dep_no_call(monkeypatch):
+def test_halo_ex_back_dep_no_call(monkeypatch):  # pylint: disable=invalid-name
     '''Check that an internal error is raised if a halo exchange
     write dependency is not a call.'''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -6750,7 +6741,7 @@ def test_halo_ex_back_dep_no_call(monkeypatch):
             "call but found <type 'function'>") in str(excinfo.value)
 
 
-def test_HaloReadAccess_input_field():
+def test_HaloReadAccess_input_field():  # pylint: disable=invalid-name
     '''The HaloReadAccess class expects a DynKernelArgument or equivalent
     object as input. If this is not the case an exception is raised. This
     test checks that this exception is raised correctly.'''
@@ -6762,7 +6753,7 @@ def test_HaloReadAccess_input_field():
         "'<type 'NoneType'>'" in str(excinfo.value))
 
 
-def test_HaloReadAccess_field_in_call():
+def test_HaloReadAccess_field_in_call():  # pylint: disable=invalid-name
     '''The field passed to HaloReadAccess should be within a kernel or
     builtin. If it is not then an exception is raised. This test
     checks that this exception is raised correctly'''
@@ -6779,7 +6770,7 @@ def test_HaloReadAccess_field_in_call():
             in str(excinfo.value))
 
 
-def test_HaloReadAccess_field_not_reader():
+def test_HaloReadAccess_field_not_reader():  # pylint: disable=invalid-name
     '''The field passed to HaloReadAccess should be read within its associated
     kernel or builtin. If it is not then an exception is raised. This
     test checks that this exception is raised correctly
@@ -6800,7 +6791,7 @@ def test_HaloReadAccess_field_not_reader():
         "'gh_inc'], but found 'gh_write'" in str(excinfo.value))
 
 
-def test_HaloRead_inv_loop_upper(monkeypatch):
+def test_HaloRead_inv_loop_upper(monkeypatch):  # pylint: disable=invalid-name
     '''The upper bound of a loop in the compute_halo_read_info method within
     the HaloReadAccesss class should be recognised by the logic. If not an
     exception is raised and this test checks that this exception is
@@ -6822,7 +6813,7 @@ def test_HaloRead_inv_loop_upper(monkeypatch):
             "unexpected loop upper bound name 'invalid'") in str(excinfo.value)
 
 
-def test_HaloReadAccess_discontinuous_field(): #### Add/modify/rename??
+def test_HaloReadAccess_discontinuous_field():  # pylint: disable=invalid-name
     '''When a discontinuous argument is read in a loop with an iteration
     space over 'ncells' then it only accesses local dofs. This test
     checks that HaloReadAccess works correctly in this situation'''
@@ -6841,7 +6832,7 @@ def test_HaloReadAccess_discontinuous_field(): #### Add/modify/rename??
     assert halo_access.stencil_type is None
 
 
-def test_loop_cont_read_inv_bound(monkeypatch):
+def test_loop_cont_read_inv_bound(monkeypatch):  # pylint: disable=invalid-name
     '''When a continuous argument is read it may access the halo. The
     logic for this is in _halo_read_access. If the loop type in this
     routine is not known then an exception is raised. This test checks
@@ -6862,7 +6853,7 @@ def test_loop_cont_read_inv_bound(monkeypatch):
             "and arg 'f1' access is 'gh_read'.") in str(excinfo.value)
 
 
-def test_new_halo_exch_vect_field(monkeypatch): #### Effect from w2v changes??
+def test_new_halo_exch_vect_field(monkeypatch):  # pylint: disable=invalid-name
     '''if a field requires (or may require) a halo exchange before it is
     called and it has more than one backward write dependencies then it
     must be a vector (as a vector field requiring a halo exchange should
@@ -6891,7 +6882,7 @@ def test_new_halo_exch_vect_field(monkeypatch): #### Effect from w2v changes??
             in str(excinfo.value))
 
 
-def test_new_halo_exch_vect_deps(monkeypatch): #### Effect from w2v changes??
+def test_new_halo_exch_vect_deps(monkeypatch):  # pylint: disable=invalid-name
     '''if a field requires (or may require) a halo exchange before it is
     called and it has more than one backward write dependencies then
     it must be a vector (as a vector field requiring a halo exchange
@@ -6922,7 +6913,7 @@ def test_new_halo_exch_vect_deps(monkeypatch): #### Effect from w2v changes??
         "and the vector size is '3'." in str(excinfo.value))
 
 
-def test_new_halo_exch_vect_deps2(monkeypatch): #### Effect from w2v changes??
+def test_new_halo_exch_vect_deps2(monkeypatch):  # pylint: disable=invalid-name
     '''if a field requires (or may require) a halo exchange before it is
     called and it has more than one backward write dependencies then
     it must be a vector (as a vector field requiring a halo exchange
@@ -6953,7 +6944,7 @@ def test_new_halo_exch_vect_deps2(monkeypatch): #### Effect from w2v changes??
         "halo exchanges" in str(excinfo.value))
 
 
-def test_halo_req_no_read_deps(monkeypatch):
+def test_halo_req_no_read_deps(monkeypatch):  # pylint: disable=invalid-name
     '''If the required method in a halo exchange object does not find any
     read dependencies then there has been an internal error and an
     exception will be raised. This test checks that this exception is
@@ -6972,28 +6963,3 @@ def test_halo_req_no_read_deps(monkeypatch):
         _, _ = halo_exchange.required()
     assert ("Internal logic error. There should be at least one read "
             "dependence for a halo exchange" in str(excinfo.value))
-
-
-def test_no_halo_exchange_annex_dofs(
-        tmpdir, f90, f90flags): #### Add/modify/rename??
-    '''If a kernel writes to a discontinuous field and also reads from a
-    continuous field then that fields annexed dofs are read (but not
-    the rest of its level1 halo). If the previous modification of this
-    continuous field makes the annexed dofs valid then no halo
-    exchange is required. This is the case when the previous loop
-    iterates over cells as it computes into the l1 halo by default
-    precisely in order to ensure that the annexed dofs are correct for
-    subsequent reading (whilst the rest of the l1 halo ends up being
-    dirty).
-
-    '''
-    _, invoke_info = parse(os.path.join(BASE_PATH, "14.7.1_halo_annexed.f90"),
-                           api="dynamo0.3")
-    psy = PSyFactory("dynamo0.3").create(invoke_info)
-    result = str(psy.gen)
-    print result
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-    assert "CALL f1_proxy%halo_exchange" in result
-    assert "CALL f2_proxy%halo_exchange" not in result

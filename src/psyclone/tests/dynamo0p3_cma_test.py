@@ -36,12 +36,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
 # Author R. Ford and A. R. Porter, STFC Daresbury Lab
-# Modified I. Kavcic, Met Office
 
 ''' This module tests the support for Column-Matrix-Assembly operators in
 the Dynamo 0.3 API using pytest. '''
 
-from __future__ import absolute_import
+# Since this is a file containing tests which often have to get in and
+# change the internal state of objects we disable pylint's warning
+# about such accesses
+# pylint: disable=protected-access
+
+
 import os
 import pytest
 import fparser
@@ -96,7 +100,7 @@ def test_cma_mdata_assembly():
     assert dkm._cma_operation == "assembly"
 
 
-def test_cma_mdata_assembly_missing_op():
+def test_cma_mdata_assembly_missing_op():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if the supplied meta-data
     is assembling a gh_columnwise_operator but doesn't have a read-only
     gh_operator '''
@@ -183,7 +187,7 @@ def test_cma_mdata_writes_lma_op():
             "allowed.") in str(excinfo)
 
 
-def test_cma_mdata_assembly_diff_spaces():
+def test_cma_mdata_assembly_diff_spaces():  # pylint: disable=invalid-name
     ''' Check that we successfully parse the supplied meta-data if it
     is assembling a gh_columnwise_operator but the to/from spaces don't
     match those of the supplied gh_operator '''
@@ -206,7 +210,7 @@ def test_cma_mdata_assembly_diff_spaces():
     assert dkm._cma_operation == "assembly"
 
 
-def test_cma_mdata_asm_vector_error():
+def test_cma_mdata_asm_vector_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if a kernel assembling a
     CMA operator has any vector arguments '''
     fparser.logging.disable('CRITICAL')
@@ -230,7 +234,7 @@ def test_cma_mdata_asm_vector_error():
         in str(excinfo)
 
 
-def test_cma_mdata_asm_stencil_error():
+def test_cma_mdata_asm_stencil_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if a kernel assembling a
     CMA operator specifies a stencil access on a field'''
     fparser.logging.disable('CRITICAL')
@@ -293,7 +297,7 @@ def test_cma_mdata_apply():
     assert dkm._cma_operation == "apply"
 
 
-def test_cma_mdata_apply_too_many_ops():
+def test_cma_mdata_apply_too_many_ops():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if there are too-many
     CMA operators '''
     fparser.logging.disable('CRITICAL')
@@ -312,7 +316,7 @@ def test_cma_mdata_apply_too_many_ops():
             "operator in its list of arguments but found 2") in str(excinfo)
 
 
-def test_cma_mdata_apply_too_many_flds():
+def test_cma_mdata_apply_too_many_flds():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if there are too-many
     field args to a kernel that applies a CMA operator '''
     fparser.logging.disable('CRITICAL')
@@ -331,7 +335,7 @@ def test_cma_mdata_apply_too_many_flds():
             "has 4") in str(excinfo)
 
 
-def test_cma_mdata_apply_no_read_fld():
+def test_cma_mdata_apply_no_read_fld():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if there is no read-only
     field arg to a kernel that applies a CMA operator '''
     fparser.logging.disable('CRITICAL')
@@ -347,7 +351,7 @@ def test_cma_mdata_apply_no_read_fld():
             "must have one read-only field argument") in str(excinfo)
 
 
-def test_cma_mdata_apply_no_write_fld():
+def test_cma_mdata_apply_no_write_fld():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if there is no written
     field arg to a kernel that applies a CMA operator '''
     fparser.logging.disable('CRITICAL')
@@ -363,7 +367,7 @@ def test_cma_mdata_apply_no_write_fld():
             "must write to one field argument") in str(excinfo)
 
 
-def test_cma_mdata_apply_wrong_spaces():
+def test_cma_mdata_apply_wrong_spaces():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if the function spaces of the
     read and write fields do not match the from and to function spaces of the
     CMA operator '''
@@ -390,7 +394,7 @@ def test_cma_mdata_apply_wrong_spaces():
             "space of the operator (any_space_2)") in str(excinfo)
 
 
-def test_cma_mdata_apply_vector_error():
+def test_cma_mdata_apply_vector_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if the meta-data for a kernel
     that applies a CMA operator contains a vector argument '''
     fparser.logging.disable('CRITICAL')
@@ -412,7 +416,7 @@ def test_cma_mdata_apply_vector_error():
             "forbidden.") in str(excinfo)
 
 
-def test_cma_mdata_apply_fld_stencil_error():
+def test_cma_mdata_apply_fld_stencil_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error if the meta-data for a kernel
     that applies a CMA operator contains a field argument with a stencil
     access '''
@@ -469,7 +473,7 @@ def test_cma_mdata_matrix_prod():
     assert dkm._cma_operation == "matrix-matrix"
 
 
-def test_cma_mdata_matrix_too_few_args():
+def test_cma_mdata_matrix_too_few_args():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error when there are too few
     arguments specified in meta-data '''
     fparser.logging.disable('CRITICAL')
@@ -504,7 +508,7 @@ def test_cma_mdata_matrix_field_arg():
             "has: ['gh_field', ") in str(excinfo)
 
 
-def test_cma_mdata_matrix_no_scalar_arg():
+def test_cma_mdata_matrix_no_scalar_arg():  # pylint: disable=invalid-name
     ''' Check that we successfully parse meta-data for a matrix-matrix kernel
     that has no scalar arguments. '''
     fparser.logging.disable('CRITICAL')
@@ -518,7 +522,7 @@ def test_cma_mdata_matrix_no_scalar_arg():
     assert dkm._cma_operation == "matrix-matrix"
 
 
-def test_cma_mdata_matrix_2_scalar_args():
+def test_cma_mdata_matrix_2_scalar_args():   # pylint: disable=invalid-name
     ''' Check that we successfully parse meta-data for a matrix-matrix kernel
     that has 2 scalar arguments. '''
     fparser.logging.disable('CRITICAL')
@@ -580,7 +584,7 @@ def test_cma_mdata_stencil_invalid():
             "is gh_operator or gh_columnwise_operator") in str(excinfo)
 
 
-def test_cma_mdata_matrix_vector_error():
+def test_cma_mdata_matrix_vector_error():  # pylint: disable=invalid-name
     ''' Check that we raise the expected error when a matrix-matrix kernel
     contains a vector argument '''
     fparser.logging.disable('CRITICAL')
@@ -596,7 +600,7 @@ def test_cma_mdata_matrix_vector_error():
             "argument (gh_columnwise_operator*3)") in str(excinfo)
 
 
-def test_cma_asm_cbanded_dofmap_error():
+def test_cma_asm_cbanded_dofmap_error():  # pylint: disable=invalid-name
     ''' Check that we raise expected internal error if DynInvokeDofmaps
     encounters an assembly kernel that has more than one CMA op argument '''
     _, invoke_info = parse(
@@ -791,7 +795,7 @@ def test_cma_asm_field_same_fs():
         assert "cma_op1_proxy%is_dirty(" not in code
 
 
-def test_cma_apply_indirection_dofmap_error():
+def test_cma_apply_indirection_dofmap_error():  # pylint: disable=invalid-name
     ''' Check that we raise expected internal error if DynInvokeDofmaps
     encounters an apply kernel that has more than one CMA op argument '''
     _, invoke_info = parse(
@@ -858,42 +862,30 @@ def test_cma_apply():
         assert "cma_op1_proxy%is_dirty(" not in code
 
 
-def test_cma_apply_discontinuous_spaces():
+def test_cma_apply_w3_space():
     ''' Test that we generate correct code for a kernel that applies
-    a CMA operator to fields on discontinuous spaces w3 and w2v '''
+    a CMA operator to a field on a discontinuous space '''
     for distmem in [False, True]:
         _, invoke_info = parse(
             os.path.join(BASE_PATH,
-                         "20.1.2_cma_apply_discontinuous.f90"),
+                         "20.1.2_cma_apply_w3.f90"),
             distributed_memory=distmem,
             api="dynamo0.3")
         psy = PSyFactory("dynamo0.3",
                          distributed_memory=distmem).create(invoke_info)
         code = str(psy.gen)
         print code
-        # Check w3
         assert "INTEGER ncell_2d" in code
         assert "TYPE(columnwise_operator_proxy_type) cma_op1_proxy" in code
         assert "ncell_2d = cma_op1_proxy%ncell_2d" in code
         assert ("INTEGER, pointer :: cma_indirection_map_w3(:) "
-                "=> null(), cma_indirection_map_any_space_1_field_b(:) => "
+                "=> null(), cma_indirection_map_any_space_2_field_b(:) => "
                 "null()\n") in code
         assert ("ndf_w3 = field_a_proxy%vspace%get_ndf()\n"
                 "      undf_w3 = field_a_proxy%vspace%"
                 "get_undf()") in code
         assert ("cma_indirection_map_w3 => "
                 "cma_op1_proxy%indirection_dofmap_to") in code
-        # Check w2v
-        assert "TYPE(columnwise_operator_proxy_type) cma_op2_proxy" in code
-        assert "ncell_2d = cma_op2_proxy%ncell_2d" in code
-        assert ("INTEGER, pointer :: "
-                "cma_indirection_map_any_space_2_field_d(:) => null(), "
-                "cma_indirection_map_w2v(:) => null()\n") in code
-        assert ("ndf_w2v = field_c_proxy%vspace%get_ndf()\n"
-                "      undf_w2v = field_c_proxy%vspace%"
-                "get_undf()") in code
-        assert ("cma_indirection_map_w2v => "
-                "cma_op2_proxy%indirection_dofmap_to") in code
         if distmem:
             # The kernel only *reads* from a CMA operator and writes to a
             # field on a discontinuous space - therefore we do not need to
@@ -901,38 +893,20 @@ def test_cma_apply_discontinuous_spaces():
             assert "DO cell=1,mesh%get_last_edge_cell()" in code
         else:
             assert "DO cell=1,field_a_proxy%vspace%get_ncell()" in code
-            assert "DO cell=1,field_c_proxy%vspace%get_ncell()" in code
 
-        # Check w3
         assert ("CALL columnwise_op_app_w3_kernel_code(cell, ncell_2d, "
                 "field_a_proxy%data, field_b_proxy%data, "
                 "cma_op1_matrix, cma_op1_nrow, cma_op1_ncol, "
                 "cma_op1_bandwidth, cma_op1_alpha, "
                 "cma_op1_beta, cma_op1_gamma_m, cma_op1_gamma_p, "
                 "ndf_w3, undf_w3, map_w3(:,cell), cma_indirection_map_w3, "
-                "ndf_any_space_1_field_b, undf_any_space_1_field_b, "
-                "map_any_space_1_field_b(:,cell), "
-                "cma_indirection_map_any_space_1_field_b)") \
+                "ndf_any_space_2_field_b, undf_any_space_2_field_b, "
+                "map_any_space_2_field_b(:,cell), "
+                "cma_indirection_map_any_space_2_field_b)") \
             in code
-        # Check w2v
-        assert ("CALL columnwise_op_app_w2v_kernel_code(cell, ncell_2d, "
-                "field_c_proxy%data, field_d_proxy%data, "
-                "cma_op2_matrix, cma_op2_nrow, cma_op2_ncol, "
-                "cma_op2_bandwidth, cma_op2_alpha, "
-                "cma_op2_beta, cma_op2_gamma_m, cma_op2_gamma_p, "
-                "ndf_w2v, undf_w2v, map_w2v(:,cell), cma_indirection_map_w2v, "
-                "ndf_any_space_2_field_d, undf_any_space_2_field_d, "
-                "map_any_space_2_field_d(:,cell), "
-                "cma_indirection_map_any_space_2_field_d)") \
-            in code
-
         if distmem:
-            # Check w3
             assert "CALL field_a_proxy%set_dirty()" in code
             assert "cma_op1_proxy%is_dirty(" not in code
-            # Check w2v
-            assert "CALL field_c_proxy%set_dirty()" in code
-            assert "cma_op2_proxy%is_dirty(" not in code
 
 
 def test_cma_apply_same_space():
@@ -1170,7 +1144,7 @@ def test_cma_asm_stub_gen():
     assert expected in str(result)
 
 
-def test_cma_asm_with_field_stub_gen():
+def test_cma_asm_with_field_stub_gen():  # pylint: disable=invalid-name
     ''' Test the kernel-stub generator for CMA operator assembly when a
     field is involved '''
     result = generate(os.path.join(BASE_PATH,
@@ -1308,7 +1282,7 @@ def test_cma_app_stub_gen():
     assert expected in str(result)
 
 
-def test_cma_app_same_space_stub_gen():
+def test_cma_app_same_space_stub_gen():  # pylint: disable=invalid-name
     ''' Test the kernel-stub generator for a CMA apply kernel where the
     to/from function spaces of the CMA operator are the same. This kernel has
     two fields and one CMA operator as arguments. '''
@@ -1391,7 +1365,7 @@ def test_cma_mul_stub_gen():
     assert expected in str(result)
 
 
-def test_cma_mul_with_scalars_stub_gen():
+def test_cma_mul_with_scalars_stub_gen():  # pylint: disable=invalid-name
     ''' Test the kernel-stub generator for a CMA matrix-matrix kernel that
     includes scalar arguments '''
     result = generate(

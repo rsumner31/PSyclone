@@ -37,7 +37,6 @@
 ''' Module which performs pytest set-up so that we can specify
     command-line options '''
 
-from __future__ import absolute_import
 import pytest
 
 

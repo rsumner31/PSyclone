@@ -12,7 +12,6 @@ the generator.py file. This includes the generate and the main
 functions.
 '''
 
-from __future__ import absolute_import
 import os
 import tempfile
 import pytest

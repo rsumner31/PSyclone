@@ -30,30 +30,23 @@
 ! ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ! POSSIBILITY OF SUCH DAMAGE.
 ! -----------------------------------------------------------------------------
-! Author R. Ford STFC Daresbury Lab
-! Modified I. Kavcic Met Office
+! Authors R. Ford and A. R. Porter, STFC Daresbury Lab
 
-module testkern_fs_mod
-
-  type, extends(kernel_type) :: testkern_fs_type
-     type(arg_type), dimension(8) :: meta_args =   &
-          (/ arg_type(gh_field, gh_write, w1),     &
-             arg_type(gh_field, gh_read,  w2),     &
-             arg_type(gh_field, gh_read,  w2),     &
-             arg_type(gh_field, gh_read,  w3),     &
-             arg_type(gh_field, gh_write, wtheta), &
-             arg_type(gh_field, gh_read,  w2h),    &
-             arg_type(gh_field, gh_read,  w2v),    &
-             arg_type(gh_field, gh_read,  any_w2)  &
+module testkern_w3
+  type, extends(kernel_type) :: testkern_w3_type
+     type(arg_type), dimension(5) :: meta_args =    &
+          (/ arg_type(gh_real, gh_read),     &
+             arg_type(gh_field,gh_read,w1), &
+             arg_type(gh_field,gh_read, w2), &
+             arg_type(gh_field,gh_read, w2), &
+             arg_type(gh_field,gh_write, w3)  &
            /)
      integer, parameter :: iterates_over = cells
    contains
-     procedure() :: code => testkern_fs_code
-  end type testkern_fs_type
-
+     procedure() :: code => testkern_code
+  end type testkern_w3_type
 contains
 
-  subroutine testkern_fs_code()
-  end subroutine testkern_fs_code
-
-end module testkern_fs_mod
+  subroutine testkern_code()
+  end subroutine testkern_code
+end module testkern_w3

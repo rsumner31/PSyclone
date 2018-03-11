@@ -2,6 +2,11 @@
 ! BSD 3-Clause License
 !
 ! Copyright (c) 2017, Science and Technology Facilities Council
+! (c) The copyright relating to this work is owned jointly by the Crown,
+! Met Office and NERC 2016.
+! However, it has been created with the help of the GungHo Consortium,
+! whose members are identified at https://puma.nerc.ac.uk/trac/GungHo/wiki
+! All rights reserved.
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -30,33 +35,20 @@
 ! ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ! POSSIBILITY OF SUCH DAMAGE.
 ! -----------------------------------------------------------------------------
-! Author R. Ford STFC Daresbury Lab
-! Modified I. Kavcic Met Office
+! Author R. Ford and A. R. Porter, STFC Daresbury Lab
 
-! A kernel which writes to two fields, one on any space and one on W3 
-! (discontinuous). The generated loop bounds in the PSy layer must therefore
-! be for the 'worst case' which is the continuous space (because we have to
-! allow for the any-space space being continuous).
-module testkern_write_any_w3_mod
+program single_invoke_cma
 
-  type, extends(kernel_type) :: testkern_write_any_w3_type
-     type(arg_type), dimension(7) :: meta_args =        &
-          (/ arg_type(gh_field, gh_write, any_space_1), &
-             arg_type(gh_field, gh_read,  w2),          &
-             arg_type(gh_field, gh_read,  w2),          &
-             arg_type(gh_field, gh_write, w3),          &
-             arg_type(gh_field, gh_read,  wtheta),      &
-             arg_type(gh_field, gh_read,  w2h),         &
-             arg_type(gh_field, gh_read,  w2v)          &
-           /)
-     integer, parameter :: iterates_over = cells
-   contains
-     procedure() :: code => testkern_write_any_w3_code
-  end type testkern_write_any_w3_type
+  ! Description: single function specified in an invoke call
+  use columnwise_op_app_w3_kernel_mod, only: &
+                            columnwise_op_app_w3_kernel_type
+  use inf,      only: field_type
+  implicit none
+  type(field_type) :: field_a, field_b
+  type(columnwise_operator_type) :: cma_op1
 
-contains
+  call invoke(                      &
+          columnwise_op_app_w3_kernel_type(field_a, field_b, cma_op1) &
+          )
 
-  subroutine testkern_write_any_w3_code()
-  end subroutine testkern_write_any_w3_code
-
-end module testkern_write_any_w3_mod
+end program single_invoke_cma

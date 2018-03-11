@@ -1,53 +1,21 @@
-!-------------------------------------------------------------------------------
-! Copyright (c) 2017,  Met Office, on behalf of HMSO and Queen's Printer
-! For further details please refer to the file LICENCE.original which you
-! should have received as part of this distribution.
-!-------------------------------------------------------------------------------
-! LICENCE.original is available from the Met Office Science Repository Service:
-! https://code.metoffice.gov.uk/trac/lfric/browser/LFRic/trunk/LICENCE.original
-! -----------------------------------------------------------------------------
-! BSD 3-Clause License
-!
 ! Modifications copyright (c) 2017, Science and Technology Facilities Council
-! All rights reserved.
-! 
-! Redistribution and use in source and binary forms, with or without
-! modification, are permitted provided that the following conditions are met:
-! 
-! * Redistributions of source code must retain the above copyright notice, this
-!   list of conditions and the following disclaimer.
-! 
-! * Redistributions in binary form must reproduce the above copyright notice,
-!   this list of conditions and the following disclaimer in the documentation
-!   and/or other materials provided with the distribution.
-! 
-! * Neither the name of the copyright holder nor the names of its
-!   contributors may be used to endorse or promote products derived from
-!   this software without specific prior written permission.
-! 
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-! AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-! IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-! DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-! FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-! DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-! SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-! CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-! OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-! -----------------------------------------------------------------------------
-!
-!> @brief Kernel which applies a columnwise assembled operator to a field
-!!        on W3 (discontinuous)
+!-------------------------------------------------------------------------------
+! (c) The copyright relating to this work is owned jointly by the Crown, 
+! Met Office and NERC 2014. 
+! However, it has been created with the help of the GungHo Consortium, 
+! whose members are identified at https://puma.nerc.ac.uk/trac/GungHo/wiki
+!-------------------------------------------------------------------------------
+
+!> @brief Kernel which applies a columnwise assembled operator to a field on W3
 
 module columnwise_op_app_w3_kernel_mod
 
 use kernel_mod,              only : kernel_type
-use argument_mod,            only : arg_type, func_type,              &
-                                    GH_FIELD, GH_COLUMNWISE_OPERATOR, &
-                                    GH_READ, GH_INC,                  &
-                                    W3, ANY_SPACE_1,                  &
-                                    GH_COLUMN_INDIRECTION_DOFMAP,     &
+use argument_mod,            only : arg_type, func_type,                    &
+                                    GH_FIELD, GH_COLUMNWISE_OPERATOR,       &
+                                    GH_READ, GH_INC,                        &
+                                    ANY_SPACE_1, ANY_SPACE_2,               &
+                                    GH_COLUMN_INDIRECTION_DOFMAP,           &
                                     CELLS 
 
 use constants_mod,           only : r_def, i_def
@@ -60,10 +28,10 @@ implicit none
 
 type, public, extends(kernel_type) :: columnwise_op_app_w3_kernel_type
   private
-  type(arg_type) :: meta_args(3) = (/                              &
-       arg_type(GH_FIELD,               GH_WRITE, W3),             &  
-       arg_type(GH_FIELD,               GH_READ,  ANY_SPACE_1),    &
-       arg_type(GH_COLUMNWISE_OPERATOR, GH_READ,  W3, ANY_SPACE_1) &
+  type(arg_type) :: meta_args(3) = (/                             &
+       arg_type(GH_FIELD,    GH_WRITE,  W3),                      &  
+       arg_type(GH_FIELD,    GH_READ, ANY_SPACE_2),               &
+       arg_type(GH_COLUMNWISE_OPERATOR, GH_READ, W3, ANY_SPACE_2) &
        /)
   integer :: iterates_over = CELLS
 contains
@@ -74,9 +42,9 @@ end type columnwise_op_app_w3_kernel_type
 ! Constructors
 !-------------------------------------------------------------------------------
 
-! Overload the default structure constructor for function space
+! overload the default structure constructor for function space
 interface columnwise_op_app_w3_kernel_type
-   module procedure columnwise_op_app_w3_kernel_constructor
+   module procedure columnwise_op_app_kernel_constructor
 end interface
 
 !-------------------------------------------------------------------------------
@@ -85,10 +53,10 @@ end interface
 public columnwise_op_app_w3_kernel_code
 contains
   
-  type(columnwise_op_app_w3_kernel_type) function columnwise_op_app_w3_kernel_constructor() result(self)
+  type(columnwise_op_app_kernel_type) function columnwise_op_app_kernel_constructor() result(self)
     implicit none
     return
-  end function columnwise_op_app_w3_kernel_constructor
+  end function columnwise_op_app_kernel_constructor
 
   !> @brief The subroutine which is called directly from the PSY layer and
   !> applies the operator as lhs += A.x
@@ -113,19 +81,19 @@ contains
   !> @param [in] gamma_p banded matrix parameter \f$\gamma_+\f$
   !> @param [in] indirection_dofmap_to indirection map for to-space
   !> @param [in] indirection_dofmap_from indirection map for from-space
-  subroutine columnwise_op_app_w3_kernel_code(cell,               &
-                                           ncell_2d,              &
-                                           lhs, x,                & 
-                                           columnwise_matrix,     &
-                                           ndf1, undf1, map1,     &
-                                           ndf2, undf2, map2,     &
-                                           nrow,                  &
-                                           ncol,                  &
-                                           bandwidth,             &
-                                           alpha,                 &
-                                           beta,                  &
-                                           gamma_m,               &
-                                           gamma_p,               &
+  subroutine columnwise_op_app_w3_kernel_code(cell,              &
+                                           ncell_2d,          &
+                                           lhs, x,            & 
+                                           columnwise_matrix, &
+                                           ndf1, undf1, map1, &
+                                           ndf2, undf2, map2, &
+                                           nrow,              &
+                                           ncol,              &
+                                           bandwidth,         &
+                                           alpha,             &
+                                           beta,              &
+                                           gamma_m,           &
+                                           gamma_p,           &
                                            indirection_dofmap_to, &
                                            indirection_dofmap_from)
     implicit none

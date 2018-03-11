@@ -1,6 +1,3 @@
-.. Modified I. Kavcic Met Office
-.. _introduction:
-
 Introduction
 ============
 
@@ -10,8 +7,8 @@ developed to support the emerging API in the GungHo project for a
 finite element dynamical core.
 
 The `GungHo project
-<https://www.metoffice.gov.uk/binaries/content/assets/mohippo/pdf/g/p/mosac_16.10.pdf>`_
-is designing and building the heart of the Met Office's next generation
+<http://www.metoffice.gov.uk/media/pdf/g/p/MOSAC_16.10.pdf>`_ is
+designing and building the heart of the Met Office's next generation
 software (known as the dynamical core) using algorithms that will
 scale to millions of cores. The project is a collaboration between the
 Met Office, NERC (via NERC funded academics) and STFC, and the

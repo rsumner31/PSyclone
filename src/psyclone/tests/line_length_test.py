@@ -9,7 +9,6 @@
 ''' This module tests the line_limit module using pytest. '''
 
 # imports
-from __future__ import absolute_import
 import os
 import pytest
 from psyclone.line_length import FortLineLength
