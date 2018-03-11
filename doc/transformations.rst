@@ -43,8 +43,6 @@ API-specific sections).
     :members:
     :noindex:
 
-.. _sec_move_trans:
-
 .. autoclass:: psyclone.transformations.MoveTrans
     :members:
     :noindex:
@@ -71,9 +69,11 @@ API-specific sections).
           halo swaps or global sums will produce an error. In such
           cases it may be possible to re-order the nodes in the
           Schedule such that the halo swaps or global sums are
-          performed outside the parallel region. The 
-	  :ref:`MoveTrans <sec_move_trans>` transformation may be used
-          for this.
+          performed outside the parallel region. At the moment any
+          such reordering would have to be performed by directly
+          modifying the schedule and would be at the users own
+          risk. In the future a transformation will be added to
+          support the re-ordering of nodes.
 
    
 Applying
@@ -280,5 +280,8 @@ PSyclone does not support (distributed-memory) halo swaps or global
 sums within OpenMP parallel regions.  Attempting to create a parallel
 region for a set of nodes that includes halo swaps or global sums will
 produce an error.  In such cases it may be possible to re-order the
-nodes in the Schedule using the :ref:`MoveTrans <sec_move_trans>`
-transformation.
+nodes in the Schedule such that the halo swaps or global sums are
+performed outside the parallel region. At the moment any such
+reordering would have to be performed by directly modifying the
+schedule and would be at the users own risk. In the future a
+transformation will be added to support the re-ordering of nodes.

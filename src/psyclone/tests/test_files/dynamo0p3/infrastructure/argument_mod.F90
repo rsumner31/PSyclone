@@ -1,43 +1,11 @@
-!-----------------------------------------------------------------------------
-! Copyright (c) 2017,  Met Office, on behalf of HMSO and Queen's Printer
-! For further details please refer to the file LICENCE.original which you
-! should have received as part of this distribution.
-!-----------------------------------------------------------------------------
-! LICENCE.original is available from the Met Office Science Repository Service:
-! https://code.metoffice.gov.uk/trac/lfric/browser/LFRic/trunk/LICENCE.original
-! -----------------------------------------------------------------------------
-
-! BSD 3-Clause License
-!
 ! Modifications copyright (c) 2017, Science and Technology Facilities Council
-! All rights reserved.
-!
-! Redistribution and use in source and binary forms, with or without
-! modification, are permitted provided that the following conditions are met:
-!
-! * Redistributions of source code must retain the above copyright notice, this
-!   list of conditions and the following disclaimer.
-!
-! * Redistributions in binary form must reproduce the above copyright notice,
-!   this list of conditions and the following disclaimer in the documentation
-!   and/or other materials provided with the distribution.
-!
-! * Neither the name of the copyright holder nor the names of its
-!   contributors may be used to endorse or promote products derived from
-!   this software without specific prior written permission.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-! AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-! IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-! DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-! FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-! DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-! SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-! CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-! OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-! OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-! -----------------------------------------------------------------------------
- 
+!-------------------------------------------------------------------------------
+! (c) The copyright relating to this work is owned jointly by the Crown, 
+! Met Office and NERC 2014. 
+! However, it has been created with the help of the GungHo Consortium, 
+! whose members are identified at https://puma.nerc.ac.uk/trac/GungHo/wiki
+!-------------------------------------------------------------------------------
+
 !> @brief The argument type to hold kernel metadata required by the psy layer.
 
 module argument_mod
@@ -53,7 +21,6 @@ module argument_mod
   integer, public, parameter :: W2V = 6
   integer, public, parameter :: W2H = 7
   integer, public, parameter :: Wchi = 8
-  integer, public, parameter :: ANY_W2 = 9
 
 ! argument types
   integer, public, parameter :: GH_FIELD    = 1 
@@ -87,24 +54,10 @@ module argument_mod
   integer, public, parameter :: GH_BASIS       = 301 
   integer, public, parameter :: GH_DIFF_BASIS  = 302
   integer, public, parameter :: GH_ORIENTATION = 303
-  integer, public, parameter :: GH_COLUMN_BANDED_DOFMAP = 304
-  integer, public, parameter :: GH_COLUMN_INDIRECTION_DOFMAP = 305
 
 ! kernel iterator
   integer, public, parameter :: CELLS     = 401
   integer, public, parameter :: ALL_DOFS  = 402
-
-! Quadrature metadata
-  integer, public, parameter :: QUADRATURE_XYZ      = 501
-  integer, public, parameter :: QUADRATURE_XYoZ     = 502
-  integer, public, parameter :: QUADRATURE_XoYoZ    = 503
-  integer, public, parameter :: GH_QUADRATURE_XYZ   = 504
-  integer, public, parameter :: GH_QUADRATURE_XYoZ  = 505
-  integer, public, parameter :: GH_QUADRATURE_XoYoZ = 506
-
-! Evaluator metadata
-  integer, public, parameter :: EVALUATOR           = 507
-  integer, public, parameter :: GH_EVALUATOR        = 508
 
   type, public :: arg_type
      integer :: arg_type         ! {GH_FIELD, GH_OPERATOR, GH_REAL, GH_INTEGER}

@@ -1,53 +1,21 @@
-# -----------------------------------------------------------------------------
-# BSD 3-Clause License
-#
-# Copyright (c) 2017, Science and Technology Facilities Council
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# * Neither the name of the copyright holder nor the names of its
-#   contributors may be used to endorse or promote products derived from
-#   this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-# -----------------------------------------------------------------------------
-# Authors: R. Ford and A. Porter, STFC Daresbury Lab
+# --------------------------------------------------------------------------
+# (c) The copyright relating to this work is owned jointly by the Crown,
+# Met Office and NERC 2015.
+# However, it has been created with the help of the GungHo Consortium,
+# whose members are identified at https://puma.nerc.ac.uk/trac/GungHo/wiki
+# --------------------------------------------------------------------------
+# Author R. Ford STFC Daresbury Lab
 
 ''' test utilities '''
 
 import os
-import pytest
 
+# The Fortran compiler to use is picked up from the F90
+# environment variable
+F90_COMPILER = os.environ.get('F90')
+F90_FLAGS = os.environ.get('F90FLAGS')
 # The various file suffixes we recognise as being Fortran
 FORTRAN_SUFFIXES = ["f90", "F90", "x90"]
-
-# Whether or not we run tests requiring code compilation is picked-up
-# from a command-line flag. (This is set-up in conftest.py.)
-TEST_COMPILE = pytest.config.getoption("--compile")
-# The following allows us to mark a test with @utils.COMPILE if it is
-# only to be run when the --compile option is passed to py.test
-COMPILE = pytest.mark.skipif(not TEST_COMPILE,
-                             reason="Need --compile option to run")
 
 
 class CompileError(Exception):
@@ -81,74 +49,50 @@ def count_lines(root, string_name):
     return count
 
 
-def print_diffs(expected, actual):
-    '''
-    Pretty-print the diff between the two, possibly multi-line, strings
-
-    :param str expected: Multi-line string
-    :param str actual: Multi-line string
-    '''
-    import difflib
-    from pprint import pprint
-    expected_lines = expected.splitlines()
-    actual_lines = actual.splitlines()
-    diff = difflib.Differ()
-    diff_list = list(diff.compare(expected_lines, actual_lines))
-    pprint(diff_list)
+def walk(parent, my_type):
+    ''' recurse through a tree of objects and return those that are
+    instances of mytype. Assumes that the children of any given node
+    are held in the list node.children '''
+    local_list = []
+    for child in parent.children:
+        if isinstance(child, my_type):
+            local_list.append(child)
+        local_list += walk(child, my_type)
+    return local_list
 
 
 def find_fortran_file(path, root_name):
     ''' Returns the full path to a Fortran source file. Searches for
     files with suffixes defined in FORTRAN_SUFFIXES. Raises IOError
-    if no matching file is found.
-
-    :param path: Location to search for Fortran file
-    :param root_name: Base name of the Fortran file to look for
-    :type path: string
-    :type root_name: string
-    :return: Full path to a Fortran source file
-    :rtype: string '''
+    if no matching file is found. '''
     name = os.path.join(path, root_name)
     for suffix in FORTRAN_SUFFIXES:
         if os.path.isfile(str(name)+"."+suffix):
             name += "." + suffix
             return name
-    raise IOError("Cannot find a Fortran file '{0}' with suffix in {1}".
-                  format(name, FORTRAN_SUFFIXES))
+    raise IOError("Cannot find a Fortran file {0} with suffix in {1}".
+                  format(name), FORTRAN_SUFFIXES)
 
 
-def compile_file(filename, f90, f90flags):
+def compile_file(filename):
     ''' Compiles the specified Fortran file into an object file (in
-    the current working directory) using the specified Fortran compiler
-    and flags. Raises a CompileError if the compilation fails.
+    the current working directory) using the compiler
+    previously picked-up from the F90 environment variable. Raises
+    a CompileError if the compilation fails. '''
 
-    :param filename: Full path to the Fortran file to compile
-    :type filename: string
-    :param f90: Command to invoke Fortran compiler
-    :type f90: string
-    :param f90flags: Flags to pass to the compiler
-    :type f90flags: string
-    :return: True if compilation succeeds
-    '''
-    # Build the command to execute
-    if f90flags:
-        arg_list = [f90, f90flags, '-c', filename]
+    if not F90_COMPILER:
+        return True
+
+    if F90_FLAGS:
+        arg_list = [F90_COMPILER, F90_FLAGS, '-c', filename]
     else:
-        arg_list = [f90, '-c', filename]
+        arg_list = [F90_COMPILER, '-c', filename]
 
-    # Attempt to execute it using subprocess
     import subprocess
-    try:
-        build = subprocess.Popen(arg_list,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT)
-        (output, error) = build.communicate()
-    except OSError as err:
-        print "Failed to run: {0}: ".format(" ".join(arg_list))
-        print "Error was: ", str(err)
-        raise CompileError(str(err))
-
-    # Check the return code
+    build = subprocess.Popen(arg_list,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+    (output, error) = build.communicate()
     stat = build.returncode
     if stat != 0:
         print output
@@ -160,44 +104,28 @@ def compile_file(filename, f90, f90flags):
         return True
 
 
-def code_compiles(api, psy_ast, tmpdir, f90, f90flags):
+def code_compiles(base_path, module_files, psy_ast, tmpdir):
     '''Attempts to build the Fortran code supplied as an AST of
     f2pygen objects. Returns True for success, False otherwise.
     If no Fortran compiler is available then returns True. All files
-    produced are deleted.
+    produced are deleted. '''
 
-    :param api: Which PSyclone API the supplied code is using
-    :type api: string
-    :param psy_ast: The AST of the generated PSy layer
-    :type psy_ast: Instance of :py:class:`psyGen.PSy`
-    :param tmpdir: py.test-supplied temporary directory
-    :type tmpdir: :py:class:`LocalPath`
-    :param f90: The command to invoke the Fortran compiler
-    :type f90: string
-    :param f90flags: Flags to pass to the Fortran compiler
-    :type f90flags: string
-    :return: True if generated code compiles, False otherwise
-    :rtype: bool
-    '''
+    if not F90_COMPILER:
+        # TODO Log the fact that we have no Fortran compiler setup?
+        # If no Fortran compiler is set-up then we quietly skip this test
+        return True
 
-    # API-specific set-up - where to find infrastructure source files
-    # and which ones to build
-    supported_apis = ["dynamo0.3"]
-    if api not in supported_apis:
-        raise CompileError("Unsupported API in code_compiles. Got {0} but "
-                           "only support {1}".format(api, supported_apis))
-
-    if api == "dynamo0.3":
-        base_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 "test_files", "dynamo0p3")
-        from dynamo0p3_build import INFRASTRUCTURE_MODULES as module_files
-
-    kernel_modules = set()
-    # Get the names of the modules associated with the kernels. By definition,
-    # built-ins do not have associated Fortran modules.
-    for invoke in psy_ast.invokes.invoke_list:
-        for call in invoke.schedule.kern_calls():
-            kernel_modules.add(call.module_name)
+    import f2pygen
+    kernel_modules = []
+    # Get the list of Use statements in the generated code
+    use_stmts = walk(psy_ast.psy_module, f2pygen.UseGen)
+    # Those that aren't in our list of infrastructure modules must be
+    # kernels. Note that we don't use this method to find which infrastructure
+    # modules to compile because we don't have any way of knowing which
+    # ones are required by the individual kernels.
+    for stmt in use_stmts:
+        if stmt.root.name not in module_files:
+            kernel_modules.append(stmt.root.name)
 
     # Change to the temporary directory passed in to us from
     # pytest. (This is a LocalPath object.)
@@ -208,7 +136,7 @@ def code_compiles(api, psy_ast, tmpdir, f90, f90flags):
     with open(psy_filename, 'w') as psy_file:
         # We limit the line lengths of the generated code so that
         # we don't trip over compiler limits.
-        from psyclone.line_length import FortLineLength
+        from line_length import FortLineLength
         fll = FortLineLength()
         psy_file.write(fll.process(str(psy_ast.gen)))
 
@@ -223,15 +151,15 @@ def code_compiles(api, psy_ast, tmpdir, f90, f90flags):
             name = find_fortran_file(module_path, fort_file)
             # We don't have to copy the source file - just compile it in the
             # current working directory.
-            success = compile_file(name, f90, f90flags)
+            success = compile_file(name)
 
         # Next, build the kernels
         for fort_file in kernel_modules:
             name = find_fortran_file(kernel_path, fort_file)
-            success = compile_file(name, f90, f90flags)
+            success = compile_file(name)
 
         # Finally, we can build the psy file we have generated
-        success = compile_file(psy_filename, f90, f90flags)
+        success = compile_file(psy_filename)
 
     except CompileError:
         # Failed to compile one of the files

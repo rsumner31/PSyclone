@@ -8,7 +8,6 @@
 
 !> @brief Kernel which applies a columnwise assembled operator to a field on W3
 
-! Kernel which applies a columnwise assembled operator to a field on W3 (discontinuous)
 module columnwise_op_app_w3_kernel_mod
 
 use kernel_mod,              only : kernel_type
@@ -52,7 +51,6 @@ end interface
 ! Contained functions/subroutines
 !-------------------------------------------------------------------------------
 public columnwise_op_app_w3_kernel_code
-
 contains
   
   type(columnwise_op_app_kernel_type) function columnwise_op_app_kernel_constructor() result(self)
