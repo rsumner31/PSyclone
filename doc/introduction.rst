@@ -2,9 +2,9 @@ Introduction
 ============
 
 PSyclone, the PSy code generator, is being developed for use in finite
-element, finite volume and finite difference codes. PSyclone development
-started with the aim to support the emerging API in the GungHo project
-for a finite element dynamical core.
+element, finite volume and finite difference codes. PSyclone is being
+developed to support the emerging API in the GungHo project for a
+finite element dynamical core.
 
 The `GungHo project
 <http://www.metoffice.gov.uk/media/pdf/g/p/MOSAC_16.10.pdf>`_ is
@@ -39,12 +39,12 @@ combination thereof with no change to the algorithm or kernel layer
 code. This approach therefore offers the potential for portable
 performance.
 
-Rather than writing the PSy layer manually, the PSyclone code generation
-system can help a user to optimise the code for a particular architecture
-(by providing optimisations such as blocking, loop merging, inlining etc),
-or alternatively, generate the PSy layer automatically.
+Rather than writing the PSy layer manually, the GungHo project is
+developing the PSyclone code generation system which can help a user to
+optimise the code for a particular architecture (by providing
+optimisations such as blocking, loop merging, inlining etc), or
+alternatively, generate the PSy layer automatically.
 
 PSyclone is also being extended to support an API being developed in
-the `GOcean project https://puma.nerc.ac.uk/trac/GOcean>`_ for two finite
-difference ocean model benchmarks, one of which is based on the
-`NEMO <https://www.nemo-ocean.eu/>`_ ocean model.
+the GOcean project for two finite difference ocean model benchmarks,
+one of which is based on the NEMO ocean model.

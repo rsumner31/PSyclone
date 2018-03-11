@@ -31,14 +31,3 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Author: A. R. Porter, STFC Daresbury Laboratory
-
-''' Single location for the current version number of PSyclone. This is
-    used in setup.py and doc/conf.py '''
-
-__MAJOR__ = 1
-__MINOR__ = 5
-__MICRO__ = 1
-
-__SHORT_VERSION__ = "{0:d}.{1:d}".format(__MAJOR__, __MINOR__)
-__VERSION__ = "{0:d}.{1:d}.{2:d}".format(__MAJOR__, __MINOR__, __MICRO__)

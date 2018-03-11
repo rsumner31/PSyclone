@@ -50,7 +50,8 @@ import pytest
 from psyclone.parse import parse, ParseError
 from psyclone.psyGen import PSyFactory, GenerationError
 from psyclone.dynamo0p3 import DynKernMetadata, DynKern, DynLoop, \
-    FunctionSpace, VALID_STENCIL_TYPES, DynGlobalSum, HaloReadAccess
+    FunctionSpace, VALID_STENCIL_TYPES, DynHaloExchange, \
+    DynGlobalSum
 from psyclone.transformations import LoopFuseTrans
 from psyclone.gen_kernel_stub import generate
 import fparser
@@ -593,6 +594,7 @@ def test_field(tmpdir, f90, f90flags):
     output = (
         "  MODULE single_invoke_psy\n"
         "    USE constants_mod, ONLY: r_def\n"
+        "    USE quadrature_mod, ONLY: quadrature_type\n"
         "    USE operator_mod, ONLY: operator_type, operator_proxy_type, "
         "columnwise_operator_type, columnwise_operator_proxy_type\n"
         "    USE field_mod, ONLY: field_type, field_proxy_type\n"
@@ -627,17 +629,17 @@ def test_field(tmpdir, f90, f90flags):
         "      map_w3 => m2_proxy%vspace%get_whole_dofmap()\n"
         "      map_w1 => f1_proxy%vspace%get_whole_dofmap()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w1\n"
+        "      ! Initialise sizes and allocate any basis arrays for w1\n"
         "      !\n"
         "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
         "      undf_w1 = f1_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
         "      !\n"
         "      ndf_w2 = f2_proxy%vspace%get_ndf()\n"
         "      undf_w2 = f2_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w3\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
         "      !\n"
         "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
         "      undf_w3 = m2_proxy%vspace%get_undf()\n"
@@ -724,17 +726,17 @@ def test_field_deref():
             "      map_w3 => est_m2_proxy%vspace%get_whole_dofmap()\n"
             "      map_w1 => f1_proxy%vspace%get_whole_dofmap()\n"
             "      !\n"
-            "      ! Initialise number of DoFs for w1\n"
+            "      ! Initialise sizes and allocate any basis arrays for w1\n"
             "      !\n"
             "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
             "      undf_w1 = f1_proxy%vspace%get_undf()\n"
             "      !\n"
-            "      ! Initialise number of DoFs for w2\n"
+            "      ! Initialise sizes and allocate any basis arrays for w2\n"
             "      !\n"
             "      ndf_w2 = est_f2_proxy%vspace%get_ndf()\n"
             "      undf_w2 = est_f2_proxy%vspace%get_undf()\n"
             "      !\n"
-            "      ! Initialise number of DoFs for w3\n"
+            "      ! Initialise sizes and allocate any basis arrays for w3\n"
             "      !\n"
             "      ndf_w3 = est_m2_proxy%vspace%get_ndf()\n"
             "      undf_w3 = est_m2_proxy%vspace%get_undf()\n"
@@ -793,6 +795,7 @@ def test_field_fs():
     output = (
         "  MODULE single_invoke_fs_psy\n"
         "    USE constants_mod, ONLY: r_def\n"
+        "    USE quadrature_mod, ONLY: quadrature_type\n"
         "    USE operator_mod, ONLY: operator_type, operator_proxy_type, "
         "columnwise_operator_type, columnwise_operator_proxy_type\n"
         "    USE field_mod, ONLY: field_type, field_proxy_type\n"
@@ -846,37 +849,37 @@ def test_field_fs():
         "      map_w2v => m3_proxy%vspace%get_whole_dofmap()\n"
         "      map_w2h => f4_proxy%vspace%get_whole_dofmap()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w1\n"
+        "      ! Initialise sizes and allocate any basis arrays for w1\n"
         "      !\n"
         "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
         "      undf_w1 = f1_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
         "      !\n"
         "      ndf_w2 = f2_proxy%vspace%get_ndf()\n"
         "      undf_w2 = f2_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w3\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
         "      !\n"
         "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
         "      undf_w3 = m2_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for wtheta\n"
+        "      ! Initialise sizes and allocate any basis arrays for wtheta\n"
         "      !\n"
         "      ndf_wtheta = f3_proxy%vspace%get_ndf()\n"
         "      undf_wtheta = f3_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2h\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2h\n"
         "      !\n"
         "      ndf_w2h = f4_proxy%vspace%get_ndf()\n"
         "      undf_w2h = f4_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2v\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2v\n"
         "      !\n"
         "      ndf_w2v = m3_proxy%vspace%get_ndf()\n"
         "      undf_w2v = m3_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for any_w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for any_w2\n"
         "      !\n"
         "      ndf_any_w2 = m4_proxy%vspace%get_ndf()\n"
         "      undf_any_w2 = m4_proxy%vspace%get_undf()\n"
@@ -932,6 +935,161 @@ def test_field_fs():
     assert str(generated_code).find(output) != -1
 
 
+def test_field_qr():
+    ''' Tests that a call, with a set of fields requiring
+    quadrature, produces correct code. '''
+    _, invoke_info = parse(os.path.join(BASE_PATH,
+                                        "1.1_single_invoke_qr.f90"),
+                           api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3").create(invoke_info)
+    generated_code = str(psy.gen)
+    print generated_code
+    output_decls = (
+        "    SUBROUTINE invoke_0_testkern_qr_type(f1, f2, m1, a, m2, istp,"
+        " qr)\n"
+        "      USE testkern_qr, ONLY: testkern_qr_code\n"
+        "      USE mesh_mod, ONLY: mesh_type\n"
+        "      REAL(KIND=r_def), intent(in) :: a\n"
+        "      INTEGER, intent(in) :: istp\n"
+        "      TYPE(field_type), intent(inout) :: f1\n"
+        "      TYPE(field_type), intent(in) :: f2, m1, m2\n"
+        "      TYPE(quadrature_type), intent(in) :: qr\n"
+        "      INTEGER cell\n"
+        "      REAL(KIND=r_def), allocatable :: basis_w1(:,:,:,:), "
+        "diff_basis_w2(:,:,:,:), basis_w3(:,:,:,:), diff_basis_w3(:,:,:,:)\n"
+        "      INTEGER dim_w1, diff_dim_w2, dim_w3, diff_dim_w3\n"
+        "      INTEGER ndf_w1, undf_w1, ndf_w2, undf_w2, ndf_w3, undf_w3\n"
+        "      REAL(KIND=r_def), pointer :: zp(:) => null(), wh(:) => null(), "
+        "wv(:) => null()\n"
+        "      REAL(KIND=r_def), pointer :: xp(:,:) => null()\n"
+        "      INTEGER nqp_h, nqp_v\n"
+        "      TYPE(mesh_type), pointer :: mesh => null()\n"
+        "      INTEGER nlayers\n"
+        "      TYPE(field_proxy_type) f1_proxy, f2_proxy, m1_proxy, m2_proxy\n"
+        "      INTEGER, pointer :: map_w2(:,:) => null(), "
+        "map_w3(:,:) => null(), map_w1(:,:) => null()\n")
+    assert output_decls in generated_code
+    output = (
+        "      !\n"
+        "      ! Initialise field and/or operator proxies\n"
+        "      !\n"
+        "      f1_proxy = f1%get_proxy()\n"
+        "      f2_proxy = f2%get_proxy()\n"
+        "      m1_proxy = m1%get_proxy()\n"
+        "      m2_proxy = m2%get_proxy()\n"
+        "      !\n"
+        "      ! Initialise number of layers\n"
+        "      !\n"
+        "      nlayers = f1_proxy%vspace%get_nlayers()\n"
+        "      !\n"
+        "      ! Create a mesh object\n"
+        "      !\n"
+        "      mesh => f1%get_mesh()\n"
+        "      !\n"
+        "      ! Look-up dofmaps for each function space\n"
+        "      !\n"
+        "      map_w2 => f2_proxy%vspace%get_whole_dofmap()\n"
+        "      map_w3 => m2_proxy%vspace%get_whole_dofmap()\n"
+        "      map_w1 => f1_proxy%vspace%get_whole_dofmap()\n"
+        "      !\n"
+        "      ! Initialise qr values\n"
+        "      !\n"
+        "      wv => qr%get_wqp_v()\n"
+        "      xp => qr%get_xqp_h()\n"
+        "      zp => qr%get_xqp_v()\n"
+        "      wh => qr%get_wqp_h()\n"
+        "      nqp_h = qr%get_nqp_h()\n"
+        "      nqp_v = qr%get_nqp_v()\n"
+        "      !\n"
+        "      ! Initialise sizes and allocate any basis arrays for w1\n"
+        "      !\n"
+        "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
+        "      undf_w1 = f1_proxy%vspace%get_undf()\n"
+        "      dim_w1 = f1_proxy%vspace%get_dim_space()\n"
+        "      ALLOCATE (basis_w1(dim_w1, ndf_w1, nqp_h, nqp_v))\n"
+        "      !\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
+        "      !\n"
+        "      ndf_w2 = f2_proxy%vspace%get_ndf()\n"
+        "      undf_w2 = f2_proxy%vspace%get_undf()\n"
+        "      diff_dim_w2 = f2_proxy%vspace%get_dim_space_diff()\n"
+        "      ALLOCATE (diff_basis_w2(diff_dim_w2, ndf_w2, nqp_h, nqp_v))\n"
+        "      !\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
+        "      !\n"
+        "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
+        "      undf_w3 = m2_proxy%vspace%get_undf()\n"
+        "      dim_w3 = m2_proxy%vspace%get_dim_space()\n"
+        "      ALLOCATE (basis_w3(dim_w3, ndf_w3, nqp_h, nqp_v))\n"
+        "      diff_dim_w3 = m2_proxy%vspace%get_dim_space_diff()\n"
+        "      ALLOCATE (diff_basis_w3(diff_dim_w3, ndf_w3, nqp_h, nqp_v))\n"
+        "      !\n"
+        "      ! Compute basis arrays\n"
+        "      !\n"
+        "      CALL f1_proxy%vspace%compute_basis_function(basis_w1, ndf_w1, "
+        "nqp_h, nqp_v, xp, zp)\n"
+        "      CALL f2_proxy%vspace%compute_diff_basis_function("
+        "diff_basis_w2, ndf_w2, nqp_h, nqp_v, xp, zp)\n"
+        "      CALL m2_proxy%vspace%compute_basis_function(basis_w3, ndf_w3, "
+        "nqp_h, nqp_v, xp, zp)\n"
+        "      CALL m2_proxy%vspace%compute_diff_basis_function("
+        "diff_basis_w3, ndf_w3, nqp_h, nqp_v, xp, zp)\n"
+        "      !\n"
+        "      ! Call kernels and communication routines\n"
+        "      !\n"
+        "      IF (f2_proxy%is_dirty(depth=1)) THEN\n"
+        "        CALL f2_proxy%halo_exchange(depth=1)\n"
+        "      END IF \n"
+        "      !\n"
+        "      IF (m1_proxy%is_dirty(depth=1)) THEN\n"
+        "        CALL m1_proxy%halo_exchange(depth=1)\n"
+        "      END IF \n"
+        "      !\n"
+        "      IF (m2_proxy%is_dirty(depth=1)) THEN\n"
+        "        CALL m2_proxy%halo_exchange(depth=1)\n"
+        "      END IF \n"
+        "      !\n"
+        "      DO cell=1,mesh%get_last_halo_cell(1)\n"
+        "        !\n"
+        "        CALL testkern_qr_code(nlayers, f1_proxy%data, f2_proxy%data, "
+        "m1_proxy%data, a, m2_proxy%data, istp, ndf_w1, undf_w1, "
+        "map_w1(:,cell), basis_w1, ndf_w2, undf_w2, map_w2(:,cell), "
+        "diff_basis_w2, ndf_w3, undf_w3, map_w3(:,cell), basis_w3, "
+        "diff_basis_w3, nqp_h, nqp_v, wh, wv)\n"
+        "      END DO \n"
+        "      !\n"
+        "      ! Set halos dirty/clean for fields modified in the above loop\n"
+        "      !\n"
+        "      CALL f1_proxy%set_dirty()\n"
+        "      !\n"
+        "      !\n"
+        "      ! Deallocate basis arrays\n"
+        "      !\n"
+        "      DEALLOCATE (basis_w1, diff_basis_w2, basis_w3, diff_basis_w3)\n"
+        "      !\n"
+        "    END SUBROUTINE invoke_0_testkern_qr_type"
+    )
+    assert output in generated_code
+
+
+def test_field_qr_deref():
+    ''' Tests that a call, with a set of fields requiring
+    quadrature, produces correct code when the quadrature is supplied as the
+    component of a derived type. '''
+    _, invoke_info = parse(os.path.join(BASE_PATH,
+                                        "1.1.1_single_invoke_qr_deref.f90"),
+                           api="dynamo0.3")
+    for dist_mem in [True, False]:
+        psy = PSyFactory("dynamo0.3",
+                         distributed_memory=dist_mem).create(invoke_info)
+        gen = str(psy.gen)
+        print gen
+        assert (
+            "    SUBROUTINE invoke_0_testkern_qr_type(f1, f2, m1, a, m2, istp,"
+            " qr_data)\n" in gen)
+        assert "TYPE(quadrature_type), intent(in) :: qr_data" in gen
+
+
 def test_real_scalar():
     ''' tests that we generate correct code when a kernel takes a single,
     real scalar argument (plus fields)'''
@@ -977,17 +1135,17 @@ def test_real_scalar():
         "      map_w3 => m2_proxy%vspace%get_whole_dofmap()\n"
         "      map_w1 => f1_proxy%vspace%get_whole_dofmap()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w1\n"
+        "      ! Initialise sizes and allocate any basis arrays for w1\n"
         "      !\n"
         "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
         "      undf_w1 = f1_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
         "      !\n"
         "      ndf_w2 = f2_proxy%vspace%get_ndf()\n"
         "      undf_w2 = f2_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w3\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
         "      !\n"
         "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
         "      undf_w3 = m2_proxy%vspace%get_undf()\n"
@@ -1060,17 +1218,17 @@ def test_int_scalar():
         "      map_w3 => m2_proxy%vspace%get_whole_dofmap()\n"
         "      map_w1 => f1_proxy%vspace%get_whole_dofmap()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w1\n"
+        "      ! Initialise sizes and allocate any basis arrays for w1\n"
         "      !\n"
         "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
         "      undf_w1 = f1_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
         "      !\n"
         "      ndf_w2 = f2_proxy%vspace%get_ndf()\n"
         "      undf_w2 = f2_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w3\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
         "      !\n"
         "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
         "      undf_w3 = m2_proxy%vspace%get_undf()\n"
@@ -1144,17 +1302,17 @@ def test_two_real_scalars():
         "      map_w3 => m2_proxy%vspace%get_whole_dofmap()\n"
         "      map_w1 => f1_proxy%vspace%get_whole_dofmap()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w1\n"
+        "      ! Initialise sizes and allocate any basis arrays for w1\n"
         "      !\n"
         "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
         "      undf_w1 = f1_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
         "      !\n"
         "      ndf_w2 = f2_proxy%vspace%get_ndf()\n"
         "      undf_w2 = f2_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w3\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
         "      !\n"
         "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
         "      undf_w3 = m2_proxy%vspace%get_undf()\n"
@@ -1227,17 +1385,17 @@ def test_two_int_scalars():
         "      map_w3 => m2_proxy%vspace%get_whole_dofmap()\n"
         "      map_w1 => f1_proxy%vspace%get_whole_dofmap()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w1\n"
+        "      ! Initialise sizes and allocate any basis arrays for w1\n"
         "      !\n"
         "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
         "      undf_w1 = f1_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
         "      !\n"
         "      ndf_w2 = f2_proxy%vspace%get_ndf()\n"
         "      undf_w2 = f2_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w3\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
         "      !\n"
         "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
         "      undf_w3 = m2_proxy%vspace%get_undf()\n"
@@ -1318,17 +1476,17 @@ def test_two_scalars():
         "      map_w3 => m2_proxy%vspace%get_whole_dofmap()\n"
         "      map_w1 => f1_proxy%vspace%get_whole_dofmap()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w1\n"
+        "      ! Initialise sizes and allocate any basis arrays for w1\n"
         "      !\n"
         "      ndf_w1 = f1_proxy%vspace%get_ndf()\n"
         "      undf_w1 = f1_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
         "      !\n"
         "      ndf_w2 = f2_proxy%vspace%get_ndf()\n"
         "      undf_w2 = f2_proxy%vspace%get_undf()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w3\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
         "      !\n"
         "      ndf_w3 = m2_proxy%vspace%get_ndf()\n"
         "      undf_w3 = m2_proxy%vspace%get_undf()\n"
@@ -1439,7 +1597,6 @@ def test_operator():
                            api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     generated_code = str(psy.gen)
-    print generated_code
     assert generated_code.find("SUBROUTINE invoke_0_testkern_operator"
                                "_type(mm_w0, chi, a, qr)") != -1
     assert generated_code.find("TYPE(operator_type), intent(inout) ::"
@@ -1447,14 +1604,14 @@ def test_operator():
     assert generated_code.find("TYPE(operator_proxy_type) mm_w0_"
                                "proxy") != -1
     assert generated_code.find("mm_w0_proxy = mm_w0%get_proxy()") != -1
-    assert ("CALL testkern_operator_code(cell, nlayers, mm_w0_proxy%ncell_3d, "
-            "mm_w0_proxy%local_stencil, chi_proxy(1)%data, chi_proxy(2)%data, "
-            "chi_proxy(3)%data, a, ndf_w0, undf_w0, map_w0(:,cell), "
-            "basis_w0_qr, diff_basis_w0_qr, np_xy_qr, np_z_qr, weights_xy_qr, "
-            "weights_z_qr)") in generated_code
+    assert generated_code.find(
+        "CALL testkern_operator_code(cell, nlayers, mm_w0_proxy%ncell_3d, mm_"
+        "w0_proxy%local_stencil, chi_proxy(1)%data, chi_proxy(2)%data, chi_pr"
+        "oxy(3)%data, a, ndf_w0, undf_w0, map_w0(:,cell), basis_w0, "
+        "diff_basis_w0, nqp_h, nqp_v, wh, wv)") != -1
 
 
-def test_operator_different_spaces(tmpdir, f90, f90flags):
+def test_operator_different_spaces():
     '''tests that an operator with different to and from spaces is
     implemented correctly in the PSy layer'''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -1462,41 +1619,30 @@ def test_operator_different_spaces(tmpdir, f90, f90flags):
                            api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     generated_code = str(psy.gen)
-    print generated_code
-
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-
-    decl_output = (
+    output = (
         "    SUBROUTINE invoke_0_assemble_weak_derivative_w3_w2_kernel_type"
         "(mapping, chi, qr)\n"
         "      USE assemble_weak_derivative_w3_w2_kernel_mod, ONLY: "
         "assemble_weak_derivative_w3_w2_kernel_code\n"
-        "      USE quadrature_xyoz_mod, ONLY: quadrature_xyoz_type, "
-        "quadrature_xyoz_proxy_type\n"
-        "      USE function_space_mod, ONLY: BASIS, DIFF_BASIS\n"
         "      USE mesh_mod, ONLY: mesh_type\n"
         "      TYPE(field_type), intent(in) :: chi(3)\n"
         "      TYPE(operator_type), intent(inout) :: mapping\n"
-        "      TYPE(quadrature_xyoz_type), intent(in) :: qr\n"
+        "      TYPE(quadrature_type), intent(in) :: qr\n"
         "      INTEGER, pointer :: orientation_w2(:) => null()\n"
         "      INTEGER cell\n"
-        "      REAL(KIND=r_def), allocatable :: basis_w3_qr(:,:,:,:), "
-        "diff_basis_w0_qr(:,:,:,:), diff_basis_w2_qr(:,:,:,:)\n"
-        "      INTEGER dim_w3, diff_dim_w0, diff_dim_w2\n"
-        "      REAL(KIND=r_def), pointer :: weights_xy_qr(:) => null(), "
-        "weights_z_qr(:) => null()\n"
-        "      INTEGER np_xy_qr, np_z_qr\n"
+        "      REAL(KIND=r_def), allocatable :: basis_w3(:,:,:,:), "
+        "diff_basis_w2(:,:,:,:), diff_basis_w0(:,:,:,:)\n"
+        "      INTEGER dim_w3, diff_dim_w2, diff_dim_w0\n"
         "      INTEGER ndf_w3, ndf_w2, ndf_w0, undf_w0\n"
+        "      REAL(KIND=r_def), pointer :: zp(:) => null(), wh(:) => null(), "
+        "wv(:) => null()\n"
+        "      REAL(KIND=r_def), pointer :: xp(:,:) => null()\n"
+        "      INTEGER nqp_h, nqp_v\n"
         "      TYPE(mesh_type), pointer :: mesh => null()\n"
         "      INTEGER nlayers\n"
         "      TYPE(operator_proxy_type) mapping_proxy\n"
         "      TYPE(field_proxy_type) chi_proxy(3)\n"
-        "      TYPE(quadrature_xyoz_proxy_type) qr_proxy\n"
-        "      INTEGER, pointer :: map_w0(:,:) => null()\n")
-    assert decl_output in generated_code
-    output = (
+        "      INTEGER, pointer :: map_w0(:,:) => null()\n"
         "      !\n"
         "      ! Initialise field and/or operator proxies\n"
         "      !\n"
@@ -1517,52 +1663,42 @@ def test_operator_different_spaces(tmpdir, f90, f90flags):
         "      !\n"
         "      map_w0 => chi_proxy(1)%vspace%get_whole_dofmap()\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w3\n"
+        "      ! Initialise qr values\n"
+        "      !\n"
+        "      wv => qr%get_wqp_v()\n"
+        "      xp => qr%get_xqp_h()\n"
+        "      zp => qr%get_xqp_v()\n"
+        "      wh => qr%get_wqp_h()\n"
+        "      nqp_h = qr%get_nqp_h()\n"
+        "      nqp_v = qr%get_nqp_v()\n"
+        "      !\n"
+        "      ! Initialise sizes and allocate any basis arrays for w3\n"
         "      !\n"
         "      ndf_w3 = mapping_proxy%fs_to%get_ndf()\n"
+        "      dim_w3 = mapping_proxy%fs_to%get_dim_space()\n"
+        "      ALLOCATE (basis_w3(dim_w3, ndf_w3, nqp_h, nqp_v))\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w2\n"
+        "      ! Initialise sizes and allocate any basis arrays for w2\n"
         "      !\n"
         "      ndf_w2 = mapping_proxy%fs_from%get_ndf()\n"
+        "      diff_dim_w2 = mapping_proxy%fs_from%get_dim_space_diff()\n"
+        "      ALLOCATE (diff_basis_w2(diff_dim_w2, ndf_w2, nqp_h, nqp_v))\n"
         "      !\n"
-        "      ! Initialise number of DoFs for w0\n"
+        "      ! Initialise sizes and allocate any basis arrays for w0\n"
         "      !\n"
         "      ndf_w0 = chi_proxy(1)%vspace%get_ndf()\n"
         "      undf_w0 = chi_proxy(1)%vspace%get_undf()\n"
-        "      !\n"
-        "      ! Look-up quadrature variables\n"
-        "      !\n"
-        "      qr_proxy = qr%get_quadrature_proxy()\n"
-        "      np_xy_qr = qr_proxy%np_xy\n"
-        "      np_z_qr = qr_proxy%np_z\n"
-        "      weights_xy_qr => qr_proxy%weights_xy\n"
-        "      weights_z_qr => qr_proxy%weights_z\n"
-        "      !\n"
-        "      ! Allocate basis arrays\n"
-        "      !\n"
-        "      dim_w3 = mapping_proxy%fs_to%get_dim_space()\n"
-        "      ALLOCATE (basis_w3_qr(dim_w3, ndf_w3, np_xy_qr, np_z_qr))\n"
-        "      !\n"
-        "      ! Allocate differential basis arrays\n"
-        "      !\n"
         "      diff_dim_w0 = chi_proxy(1)%vspace%get_dim_space_diff()\n"
-        "      ALLOCATE (diff_basis_w0_qr(diff_dim_w0, ndf_w0, np_xy_qr, "
-        "np_z_qr))\n"
-        "      diff_dim_w2 = mapping_proxy%fs_from%get_dim_space_diff()\n"
-        "      ALLOCATE (diff_basis_w2_qr(diff_dim_w2, ndf_w2, np_xy_qr, "
-        "np_z_qr))\n"
+        "      ALLOCATE (diff_basis_w0(diff_dim_w0, ndf_w0, nqp_h, nqp_v))\n"
         "      !\n"
         "      ! Compute basis arrays\n"
         "      !\n"
-        "      CALL qr%compute_function(BASIS, mapping_proxy%fs_to, "
-        "dim_w3, ndf_w3, basis_w3_qr)\n"
-        "      !\n"
-        "      ! Compute differential basis arrays\n"
-        "      !\n"
-        "      CALL qr%compute_function(DIFF_BASIS, chi_proxy(1)%vspace, "
-        "diff_dim_w0, ndf_w0, diff_basis_w0_qr)\n"
-        "      CALL qr%compute_function(DIFF_BASIS, mapping_proxy%fs_from, "
-        "diff_dim_w2, ndf_w2, diff_basis_w2_qr)\n"
+        "      CALL mapping_proxy%fs_to%compute_basis_function(basis_w3, "
+        "ndf_w3, nqp_h, nqp_v, xp, zp)\n"
+        "      CALL mapping_proxy%fs_from%compute_diff_basis_function("
+        "diff_basis_w2, ndf_w2, nqp_h, nqp_v, xp, zp)\n"
+        "      CALL chi_proxy(1)%vspace%compute_diff_basis_function("
+        "diff_basis_w0, ndf_w0, nqp_h, nqp_v, xp, zp)\n"
         "      !\n"
         "      ! Call kernels and communication routines\n"
         "      !\n"
@@ -1586,21 +1722,21 @@ def test_operator_different_spaces(tmpdir, f90, f90flags):
         "        CALL assemble_weak_derivative_w3_w2_kernel_code(cell, "
         "nlayers, mapping_proxy%ncell_3d, mapping_proxy%local_stencil, "
         "chi_proxy(1)%data, chi_proxy(2)%data, chi_proxy(3)%data, ndf_w3, "
-        "basis_w3_qr, ndf_w2, diff_basis_w2_qr, orientation_w2, "
-        "ndf_w0, undf_w0, map_w0(:,cell), diff_basis_w0_qr, "
-        "np_xy_qr, np_z_qr, weights_xy_qr, weights_z_qr)\n"
+        "basis_w3, ndf_w2, diff_basis_w2, orientation_w2, ndf_w0, undf_w0, "
+        "map_w0(:,cell), diff_basis_w0, nqp_h, nqp_v, wh, wv)\n"
         "      END DO \n"
         "      !\n"
         "      ! Deallocate basis arrays\n"
         "      !\n"
-        "      DEALLOCATE (diff_basis_w2_qr, diff_basis_w0_qr, basis_w3_qr)\n"
+        "      DEALLOCATE (basis_w3, diff_basis_w2, diff_basis_w0)\n"
         "      !\n"
         "    END SUBROUTINE invoke_0_assemble_weak_derivative_w3_w2_kernel_"
         "type")
+    print generated_code
     assert output in generated_code
 
 
-def test_operator_nofield(tmpdir, f90, f90flags):
+def test_operator_nofield():
     ''' tests that an operator with no field on the same space is
     implemented correctly in the PSy layer '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -1608,12 +1744,6 @@ def test_operator_nofield(tmpdir, f90, f90flags):
                            api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     gen_code_str = str(psy.gen)
-    print gen_code_str
-
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-
     assert gen_code_str.find("SUBROUTINE invoke_0_testkern_operator_"
                              "nofield_type(mm_w2, chi, qr)") != -1
     assert gen_code_str.find("TYPE(operator_type), intent(inout) :: "
@@ -1622,16 +1752,14 @@ def test_operator_nofield(tmpdir, f90, f90flags):
     assert gen_code_str.find("mm_w2_proxy = mm_w2%get_proxy()") != -1
     assert gen_code_str.find("undf_w2") == -1
     assert gen_code_str.find("map_w2") == -1
-    assert ("CALL testkern_operator_nofield_code(cell, nlayers, "
-            "mm_w2_proxy%ncell_3d, mm_w2_proxy%local_stencil, "
-            "chi_proxy(1)%data, chi_proxy(2)%data, chi_proxy(3)%data, "
-            "ndf_w2, basis_w2_qr, ndf_w0, undf_w0, "
-            "map_w0(:,cell), diff_basis_w0_qr, np_xy_qr, np_z_qr, "
-            "weights_xy_qr, weights_z_qr)" in gen_code_str)
+    assert gen_code_str.find(
+        "CALL testkern_operator_code(cell, nlayers, mm_w2_proxy%ncell_3d,"
+        " mm_w2_proxy%local_stencil, chi_proxy(1)%data, chi_proxy(2)%data"
+        ", chi_proxy(3)%data, ndf_w2, basis_w2, ndf_w0, undf_w0, "
+        "map_w0(:,cell), diff_basis_w0, nqp_h, nqp_v, wh, wv)") != -1
 
 
-def test_operator_nofield_different_space(  # pylint: disable=invalid-name
-        tmpdir, f90, f90flags):
+def test_operator_nofield_different_space():  # pylint: disable=invalid-name
     ''' tests that an operator with no field on different spaces is
     implemented correctly in the PSy layer '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -1641,11 +1769,6 @@ def test_operator_nofield_different_space(  # pylint: disable=invalid-name
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     gen = str(psy.gen)
     print gen
-
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-
     assert "mesh => my_mapping%get_mesh()" in gen
     assert "nlayers = my_mapping_proxy%fs_from%get_nlayers()" in gen
     assert "ndf_w3 = my_mapping_proxy%fs_from%get_ndf()" in gen
@@ -1669,13 +1792,12 @@ def test_operator_nofield_scalar():
     assert "nlayers = my_mapping_proxy%fs_from%get_nlayers()" in gen
     assert "ndf_w2 = my_mapping_proxy%fs_from%get_ndf()" in gen
     assert "DO cell=1,mesh%get_last_halo_cell(1)" in gen
-    assert ("(cell, nlayers, my_mapping_proxy%ncell_3d, my_mapping_proxy%"
-            "local_stencil, b, ndf_w2, basis_w2_qr, np_xy_qr, np_z_qr, "
-            "weights_xy_qr, weights_z_qr)" in gen)
+    assert (
+        "(cell, nlayers, my_mapping_proxy%ncell_3d, my_mapping_proxy%"
+        "local_stencil, b, ndf_w2, basis_w2, nqp_h, nqp_v, wh, wv)" in gen)
 
 
-def test_operator_nofield_scalar_deref(  # pylint: disable=invalid-name
-        tmpdir, f90, f90flags):
+def test_operator_nofield_scalar_deref():  # pylint: disable=invalid-name
     ''' Tests that an operator with no field and a
     scalar argument is implemented correctly in the PSy layer when both
     are obtained by dereferencing derived type objects '''
@@ -1688,17 +1810,12 @@ def test_operator_nofield_scalar_deref(  # pylint: disable=invalid-name
                          distributed_memory=dist_mem).create(invoke_info)
         gen = str(psy.gen)
         print gen
-
-        if utils.TEST_COMPILE:
-            assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-
         if dist_mem:
             assert "mesh => opbox_my_mapping%get_mesh()" in gen
         assert "nlayers = opbox_my_mapping_proxy%fs_from%get_nlayers()" in gen
         assert "ndf_w2 = opbox_my_mapping_proxy%fs_from%get_ndf()" in gen
-        assert ("qr_get_instance%compute_function(BASIS, "
-                "opbox_my_mapping_proxy%fs_from, "
-                "dim_w2, ndf_w2, basis_w2_qr_get_instance)" in gen)
+        assert ("CALL opbox_my_mapping_proxy%fs_from%compute_basis_function("
+                "basis_w2, ndf_w2, nqp_h, nqp_v, xp, zp)" in gen)
         if dist_mem:
             assert "DO cell=1,mesh%get_last_halo_cell(1)" in gen
         else:
@@ -1706,13 +1823,11 @@ def test_operator_nofield_scalar_deref(  # pylint: disable=invalid-name
                 "DO cell=1,opbox_my_mapping_proxy%fs_from%get_ncell()" in gen)
         assert (
             "(cell, nlayers, opbox_my_mapping_proxy%ncell_3d, "
-            "opbox_my_mapping_proxy%local_stencil, box_b, ndf_w2, "
-            "basis_w2_qr_get_instance, np_xy_qr_get_instance, "
-            "np_z_qr_get_instance, weights_xy_qr_get_instance,"
-            " weights_z_qr_get_instance)" in gen)
+            "opbox_my_mapping_proxy%local_stencil, box_b, ndf_w2, basis_w2, "
+            "nqp_h, nqp_v, wh, wv)" in gen)
 
 
-def test_operator_orientation(tmpdir, f90, f90flags):
+def test_operator_orientation():
     ''' tests that an operator requiring orientation information is
     implemented correctly in the PSy layer '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -1721,10 +1836,6 @@ def test_operator_orientation(tmpdir, f90, f90flags):
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     gen_str = str(psy.gen)
     print gen_str
-
-    if utils.TEST_COMPILE:
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-
     assert gen_str.find("SUBROUTINE invoke_0_testkern_operator"
                         "_orient_type(mm_w1, chi, qr)") != -1
     assert gen_str.find("TYPE(operator_type), intent(inout) ::"
@@ -1735,16 +1846,14 @@ def test_operator_orientation(tmpdir, f90, f90flags):
     assert gen_str.find(
         "orientation_w1 => mm_w1_proxy%fs_from%get_cell_orientation"
         "(cell)") != -1
-    assert ("CALL testkern_operator_orient_code(cell, nlayers, "
-            "mm_w1_proxy%ncell_3d, mm_w1_proxy%local_stencil, "
-            "chi_proxy(1)%data, chi_proxy(2)%data, chi_proxy(3)%data, ndf_w1, "
-            "basis_w1_qr, orientation_w1, ndf_w0, undf_w0, map_w0(:,cell), "
-            "diff_basis_w0_qr, np_xy_qr, np_z_qr, weights_xy_qr, "
-            "weights_z_qr)" in gen_str)
+    assert gen_str.find(
+        "CALL testkern_operator_orient_code(cell, nlayers, mm_w1_proxy%ncell_"
+        "3d, mm_w1_proxy%local_stencil, chi_proxy(1)%data, chi_proxy(2)%data,"
+        " chi_proxy(3)%data, ndf_w1, basis_w1, orientation_w1, ndf_w0, undf_w"
+        "0, map_w0(:,cell), diff_basis_w0, nqp_h, nqp_v, wh, wv)") != -1
 
 
-def test_op_orient_different_space(  # pylint: disable=invalid-name
-        tmpdir, f90, f90flags):
+def test_op_orient_different_space():  # pylint: disable=invalid-name
     '''tests that an operator on different spaces requiring orientation
     information is implemented correctly in the PSy layer. '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -1754,33 +1863,30 @@ def test_op_orient_different_space(  # pylint: disable=invalid-name
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     gen_str = str(psy.gen)
     print gen_str
-
-    if utils.TEST_COMPILE:
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-
     assert (
         "INTEGER, pointer :: orientation_w1(:) => null(), orientation_w2(:)"
         " => null()" in gen_str)
     assert "ndf_w2 = my_mapping_proxy%fs_from%get_ndf()" in gen_str
     assert "ndf_w1 = my_mapping_proxy%fs_to%get_ndf()" in gen_str
     assert "dim_w1 = my_mapping_proxy%fs_to%get_dim_space()" in gen_str
-    assert ("CALL qr%compute_function(BASIS, my_mapping_proxy%fs_to, "
-            "dim_w1, ndf_w1, basis_w1_qr)" in gen_str)
+    assert (
+        "CALL my_mapping_proxy%fs_to%compute_basis_function(basis_w1, ndf_w1,"
+        " nqp_h, nqp_v, xp, zp)" in gen_str)
     assert (
         "orientation_w2 => my_mapping_proxy%fs_from%get_cell_orientation("
         "cell)" in gen_str)
     assert (
         "orientation_w1 => my_mapping_proxy%fs_to%get_cell_orientation(cell)"
         in gen_str)
-    assert ("(cell, nlayers, my_mapping_proxy%ncell_3d, "
-            "my_mapping_proxy%local_stencil, chi_proxy(1)%data, "
-            "chi_proxy(2)%data, chi_proxy(3)%data, ndf_w1, basis_w1_qr, "
-            "orientation_w1, ndf_w2, orientation_w2, ndf_w0, undf_w0, "
-            "map_w0(:,cell), diff_basis_w0_qr, np_xy_qr, np_z_qr, "
-            "weights_xy_qr, weights_z_qr)" in gen_str)
+    assert (
+        "(cell, nlayers, my_mapping_proxy%ncell_3d, my_mapping_proxy%local_"
+        "stencil, chi_proxy(1)%data, chi_proxy(2)%data, chi_proxy(3)%data, "
+        "ndf_w1, basis_w1, orientation_w1, ndf_w2, orientation_w2, ndf_w0, "
+        "undf_w0, map_w0(:,cell), diff_basis_w0, nqp_h, nqp_v, wh, wv)"
+        in gen_str)
 
 
-def test_operator_deref(tmpdir, f90, f90flags):
+def test_operator_deref():
     ''' Tests that we generate correct names for an operator in the PSy
     layer when obtained by de-referencing a derived type in the Algorithm
     layer '''
@@ -1790,10 +1896,6 @@ def test_operator_deref(tmpdir, f90, f90flags):
         psy = PSyFactory("dynamo0.3",
                          distributed_memory=dist_mem).create(invoke_info)
         generated_code = str(psy.gen)
-        print generated_code
-        if utils.TEST_COMPILE:
-            assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-
         assert generated_code.find("SUBROUTINE invoke_0_testkern_operator"
                                    "_type(mm_w0_op, chi, a, qr)") != -1
         assert generated_code.find("TYPE(operator_type), intent(inout) ::"
@@ -1806,9 +1908,8 @@ def test_operator_deref(tmpdir, f90, f90flags):
             "CALL testkern_operator_code(cell, nlayers, "
             "mm_w0_op_proxy%ncell_3d, mm_w0_op_proxy%local_stencil, "
             "chi_proxy(1)%data, chi_proxy(2)%data, chi_proxy(3)%data, a, "
-            "ndf_w0, undf_w0, map_w0(:,cell), basis_w0_qr, "
-            "diff_basis_w0_qr, np_xy_qr, np_z_qr, weights_xy_qr, "
-            "weights_z_qr)") != -1
+            "ndf_w0, undf_w0, map_w0(:,cell), basis_w0, "
+            "diff_basis_w0, nqp_h, nqp_v, wh, wv)") != -1
 
 
 def test_operator_no_dofmap_lookup():
@@ -1846,7 +1947,7 @@ def test_operator_read_level1_halo():
             "However the containing loop goes out to level 2" in str(excinfo))
 
 
-def test_any_space_1(tmpdir, f90, f90flags):
+def test_any_space_1():
     ''' tests that any_space is implemented correctly in the PSy
     layer. Includes more than one type of any_space declaration
     and func_type basis functions on any_space. '''
@@ -1855,35 +1956,32 @@ def test_any_space_1(tmpdir, f90, f90flags):
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     generated_code = str(psy.gen)
     print generated_code
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-
     assert ("INTEGER, pointer :: map_w0(:,:) => null(), "
             "map_any_space_2_b(:,:) => null(), "
             "map_any_space_1_a(:,:) => null()\n" in generated_code)
     assert generated_code.find(
-        "REAL(KIND=r_def), allocatable :: basis_any_space_1_a_qr(:,:,:,:), "
-        "basis_any_space_2_b_qr(:,:,:,:)") != -1
+        "REAL(KIND=r_def), allocatable :: basis_any_space_1_a(:,:,:,:), "
+        "basis_any_space_2_b(:,:,:,:)") != -1
     assert generated_code.find(
-        "ALLOCATE (basis_any_space_1_a_qr(dim_any_space_1_a, "
-        "ndf_any_space_1_a, np_xy_qr, np_z_qr))") != -1
+        "ALLOCATE (basis_any_space_1_a(dim_any_space_1_a, ndf_any_space_1_a, "
+        "nqp_h, nqp_v))") != -1
     assert generated_code.find(
-        "ALLOCATE (basis_any_space_2_b_qr(dim_any_space_2_b, "
-        "ndf_any_space_2_b, np_xy_qr, np_z_qr))") != -1
+        "ALLOCATE (basis_any_space_2_b(dim_any_space_2_b, ndf_any_space_2_b, "
+        "nqp_h, nqp_v))") != -1
     assert generated_code.find(
         "map_any_space_1_a => a_proxy%vspace%get_whole_dofmap()") != -1
     assert generated_code.find(
         "map_any_space_2_b => b_proxy%vspace%get_whole_dofmap()") != -1
-    assert ("CALL testkern_any_space_1_code(nlayers, a_proxy%data, rdt, "
-            "b_proxy%data, c_proxy(1)%data, c_proxy(2)%data, c_proxy(3)%data, "
-            "ndf_any_space_1_a, undf_any_space_1_a, map_any_space_1_a(:,cell),"
-            " basis_any_space_1_a_qr, ndf_any_space_2_b, undf_any_space_2_b, "
-            "map_any_space_2_b(:,cell), basis_any_space_2_b_qr, ndf_w0, "
-            "undf_w0, map_w0(:,cell), diff_basis_w0_qr, np_xy_qr, np_z_qr, "
-            "weights_xy_qr, weights_z_qr)" in generated_code)
-    assert ("DEALLOCATE (basis_any_space_2_b_qr, diff_basis_w0_qr, "
-            "basis_any_space_1_a_qr)" in generated_code)
+    assert generated_code.find(
+        "CALL testkern_any_space_1_code(nlayers, a_proxy%data, rdt, b_proxy%"
+        "data, c_proxy(1)%data, c_proxy(2)%data, c_proxy(3)%data, ndf_a"
+        "ny_space_1_a, undf_any_space_1_a, map_any_space_1_a(:,cell), "
+        "basis_any_space_1_a, ndf_any_space_2_b, undf_any_space_2_b, "
+        "map_any_space_2_b(:,cell), basis_any_space_2_b, ndf_w0, undf_w0, "
+        "map_w0(:,cell), diff_basis_w0, nqp_h, nqp_v, wh, wv)") != -1
+    assert generated_code.find(
+        "DEALLOCATE (basis_any_space_1_a, basis_any_space_2_b, diff_basis_w"
+        "0)") != -1
 
 
 def test_any_space_2():
@@ -1928,39 +2026,42 @@ def test_op_any_space_different_space_1():  # pylint: disable=invalid-name
         "ndf_any_space_1_a = a_proxy%fs_to%get_ndf()") != -1
 
 
-def test_op_any_space_different_space_2(  # pylint: disable=invalid-name
-        tmpdir, f90, f90flags):
+def test_op_any_space_different_space_2():  # pylint: disable=invalid-name
     ''' tests that any_space is implemented correctly in the PSy
     layer in a more complicated example. '''
     _, invoke_info = parse(os.path.join(BASE_PATH, "11.3_any_space.f90"),
                            api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(invoke_info)
-    generated_code = str(psy.gen)
+    generated_code = psy.gen
     print generated_code
-
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-    assert "ndf_any_space_1_b = b_proxy%fs_to%get_ndf()" in generated_code
-    assert "dim_any_space_1_b = b_proxy%fs_to%get_dim_space()" in \
-        generated_code
-    assert "ndf_any_space_2_b = b_proxy%fs_from%get_ndf()" in generated_code
-    assert "ndf_any_space_3_c = c_proxy%fs_to%get_ndf()" in generated_code
-    assert "ndf_any_space_4_d = d_proxy%fs_from%get_ndf()" in generated_code
-    assert "undf_any_space_4_d = d_proxy%fs_from%get_undf()" in generated_code
-    assert "dim_any_space_4_d = d_proxy%fs_from%get_dim_space()" in \
-        generated_code
-    assert "ndf_any_space_5_a = a_proxy%vspace%get_ndf()" in generated_code
-    assert "undf_any_space_5_a = a_proxy%vspace%get_undf()" in generated_code
-    assert "CALL qr%compute_function(BASIS, b_proxy%fs_to, " in generated_code
-    assert "CALL qr%compute_function(BASIS, d_proxy%fs_from, " in \
-        generated_code
-    assert "CALL qr%compute_function(DIFF_BASIS, d_proxy%fs_from, " in \
-        generated_code
-    assert "map_any_space_5_a => a_proxy%vspace%get_whole_dofmap()" in \
-        generated_code
-    assert "map_any_space_4_d => f_proxy%vspace%get_whole_dofmap()" in \
-        generated_code
+    assert str(generated_code).find(
+        "ndf_any_space_1_b = b_proxy%fs_to%get_ndf()") != -1
+    assert str(generated_code).find(
+        "dim_any_space_1_b = b_proxy%fs_to%get_dim_space()") != -1
+    assert str(generated_code).find(
+        "ndf_any_space_2_b = b_proxy%fs_from%get_ndf()") != -1
+    assert str(generated_code).find(
+        "ndf_any_space_3_c = c_proxy%fs_to%get_ndf()") != -1
+    assert str(generated_code).find(
+        "ndf_any_space_4_d = d_proxy%fs_from%get_ndf()") != -1
+    assert str(generated_code).find(
+        "undf_any_space_4_d = d_proxy%fs_from%get_undf()") != -1
+    assert str(generated_code).find(
+        "dim_any_space_4_d = d_proxy%fs_from%get_dim_space()") != -1
+    assert str(generated_code).find(
+        "ndf_any_space_5_a = a_proxy%vspace%get_ndf()") != -1
+    assert str(generated_code).find(
+        "undf_any_space_5_a = a_proxy%vspace%get_undf()") != -1
+    assert str(generated_code).find(
+        "CALL b_proxy%fs_to%compute_basis_function") != -1
+    assert str(generated_code).find(
+        "CALL d_proxy%fs_from%compute_basis_function") != -1
+    assert str(generated_code).find(
+        "CALL d_proxy%fs_from%compute_diff_basis_function") != -1
+    assert str(generated_code).find(
+        "map_any_space_5_a => a_proxy%vspace%get_whole_dofmap()") != -1
+    assert str(generated_code).find(
+        "map_any_space_4_d => f_proxy%vspace%get_whole_dofmap()") != -1
 
 
 def test_invoke_uniq_declns():
@@ -2031,7 +2132,7 @@ def test_dyninvoke_first_access():
         in str(excinfo.value)
 
 
-def test_dyninvoke_uniq_declns_inv_type():  # pylint: disable=invalid-name
+def test_dyninvoke_uniq_declns_intent_invalid_type():
     ''' tests that we raise an error when DynInvoke.unique_declns_by_intent()
     is called for an invalid argument type '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2044,7 +2145,7 @@ def test_dyninvoke_uniq_declns_inv_type():  # pylint: disable=invalid-name
         in str(excinfo.value)
 
 
-def test_dyninvoke_uniq_declns_intent_fields():  # pylint: disable=invalid-name
+def test_dyninvoke_uniq_declns_intent_fields():
     ''' tests that DynInvoke.unique_declns_by_intent() returns the correct
     list of arguments for gh_fields '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2057,7 +2158,7 @@ def test_dyninvoke_uniq_declns_intent_fields():  # pylint: disable=invalid-name
     assert args['in'] == ['f2', 'm1', 'm2']
 
 
-def test_dyninvoke_uniq_declns_intent_real():  # pylint: disable=invalid-name
+def test_dyninvoke_uniq_declns_intent_real():
     ''' tests that DynInvoke.unique_declns_by_intent() returns the correct
     list of arguments for gh_real '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2070,7 +2171,7 @@ def test_dyninvoke_uniq_declns_intent_real():  # pylint: disable=invalid-name
     assert args['in'] == ['a']
 
 
-def test_dyninvoke_uniq_declns_intent_int():  # pylint: disable=invalid-name
+def test_dyninvoke_uniq_declns_intent_integer():
     ''' tests that DynInvoke.unique_declns_by_intent() returns the correct
     list of arguments for gh_integer '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2083,7 +2184,7 @@ def test_dyninvoke_uniq_declns_intent_int():  # pylint: disable=invalid-name
     assert args['in'] == ['istep']
 
 
-def test_dyninvoke_uniq_declns_intent_ops():  # pylint: disable=invalid-name
+def test_dyninvoke_uniq_declns_intent_ops():
     ''' tests that DynInvoke.unique_declns_by_intent() returns the correct
     list of arguments for operator arguments '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -2254,8 +2355,7 @@ def test_bc_kernel_field_only(monkeypatch):
         # otherwise the first monkey-patch causes it to break. Since
         # it is a function we have to patch it with a temporary
         # function which we create using lambda.
-        monkeypatch.setattr(arg, "ref_name",
-                            lambda function_space=None: "vspace")
+        monkeypatch.setattr(arg, "ref_name", lambda fs=None: "vspace")
         with pytest.raises(GenerationError) as excinfo:
             _ = psy.gen
         assert ("Expected a gh_field from which to look-up boundary dofs "
@@ -2471,7 +2571,7 @@ def test_2kern_invoke_any_space():
         in gen)
 
 
-def test_multikern_invoke_any_space(tmpdir, f90, f90flags):
+def test_multikern_invoke_any_space():
     ''' Test that we generate correct code when there are multiple
     kernels within an invoke with kernel fields declared as
     any_space.  '''
@@ -2481,24 +2581,20 @@ def test_multikern_invoke_any_space(tmpdir, f90, f90flags):
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     gen = str(psy.gen)
     print gen
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
     assert ("INTEGER, pointer :: map_any_space_1_f1(:,:) => null(), "
             "map_any_space_2_f1(:,:) => null(), "
             "map_any_space_2_f2(:,:) => null(), "
             "map_any_space_1_f2(:,:) => null(), map_w0(:,:) => null()" in gen)
-    assert (
-        "REAL(KIND=r_def), allocatable :: basis_any_space_1_f1_qr(:,:,:,:), "
-        "basis_any_space_2_f2_qr(:,:,:,:), basis_any_space_1_f2_qr(:,:,:,:), "
-        "basis_any_space_2_f1_qr(:,:,:,:), diff_basis_w0_qr(:,:,:,:)"in gen)
+    assert ("REAL(KIND=r_def), allocatable :: basis_any_space_1_f1(:,:,:,:), "
+            "basis_any_space_2_f2(:,:,:,:), diff_basis_w0(:,:,:,:), "
+            "basis_any_space_1_f2(:,:,:,:), basis_any_space_2_f1(:,:,:,:)"
+            in gen)
     assert "ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()" in gen
     assert "ndf_any_space_2_f2 = f2_proxy%vspace%get_ndf()" in gen
     assert "ndf_w0 = f3_proxy(1)%vspace%get_ndf()" in gen
     assert "ndf_any_space_1_f2 = f2_proxy%vspace%get_ndf()" in gen
-    assert ("CALL qr%compute_function(BASIS, f2_proxy%vspace, "
-            "dim_any_space_1_f2, ndf_any_space_1_f2, "
-            "basis_any_space_1_f2_qr)" in gen)
+    assert ("CALL f2_proxy%vspace%compute_basis_function(basis_any_space_1_f2,"
+            " ndf_any_space_1_f2, nqp_h, nqp_v, xp, zp)" in gen)
     assert (
         "      map_any_space_1_f1 => f1_proxy%vspace%get_whole_dofmap()\n"
         "      map_any_space_2_f1 => f1_proxy%vspace%get_whole_dofmap()\n"
@@ -2508,15 +2604,14 @@ def test_multikern_invoke_any_space(tmpdir, f90, f90flags):
     assert ("CALL testkern_any_space_1_code(nlayers, f1_proxy%data, rdt, "
             "f2_proxy%data, f3_proxy(1)%data, f3_proxy(2)%data, "
             "f3_proxy(3)%data, ndf_any_space_1_f1, undf_any_space_1_f1, "
-            "map_any_space_1_f1(:,cell), basis_any_space_1_f1_qr, "
+            "map_any_space_1_f1(:,cell), basis_any_space_1_f1, "
             "ndf_any_space_2_f2, undf_any_space_2_f2, "
-            "map_any_space_2_f2(:,cell), basis_any_space_2_f2_qr, ndf_w0, "
-            "undf_w0, map_w0(:,cell), diff_basis_w0_qr, np_xy_qr, np_z_qr, "
-            "weights_xy_qr, weights_z_qr" in gen)
+            "map_any_space_2_f2(:,cell), basis_any_space_2_f2, ndf_w0, "
+            "undf_w0, map_w0(:,cell), diff_basis_w0, nqp_h, nqp_v, "
+            "wh, wv" in gen)
 
 
-def test_mkern_invoke_multiple_any_spaces(  # pylint: disable=invalid-name
-        tmpdir, f90, f90flags):
+def test_mkern_invoke_multiple_any_spaces():
     ''' Test that we generate correct code when there are multiple
     kernels within an invoke with kernel fields declared as
     any_space.  '''
@@ -2526,17 +2621,12 @@ def test_mkern_invoke_multiple_any_spaces(  # pylint: disable=invalid-name
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     gen = str(psy.gen)
     print gen
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
     assert "ndf_any_space_1_f1 = f1_proxy%vspace%get_ndf()" in gen
-    assert ("CALL qr%compute_function(BASIS, f1_proxy%vspace, "
-            "dim_any_space_1_f1, ndf_any_space_1_f1, "
-            "basis_any_space_1_f1_qr)" in gen)
+    assert ("CALL f1_proxy%vspace%compute_basis_function(basis_any_space_1_f1,"
+            " ndf_any_space_1_f1, nqp_h, nqp_v, xp, zp)" in gen)
     assert "ndf_any_space_2_f2 = f2_proxy%vspace%get_ndf()" in gen
-    assert ("CALL qr%compute_function(BASIS, f2_proxy%vspace, "
-            "dim_any_space_2_f2, ndf_any_space_2_f2, "
-            "basis_any_space_2_f2_qr)" in gen)
+    assert ("CALL f2_proxy%vspace%compute_basis_function(basis_any_space_2_f2,"
+            " ndf_any_space_2_f2, nqp_h, nqp_v, xp, zp)" in gen)
     assert "ndf_any_space_1_f2 = f2_proxy%vspace%get_ndf()" in gen
     assert "ndf_any_space_1_op = op_proxy%fs_to%get_ndf()" in gen
     assert "ndf_any_space_5_f2 = f2_proxy%vspace%get_ndf()" in gen
@@ -2545,28 +2635,12 @@ def test_mkern_invoke_multiple_any_spaces(  # pylint: disable=invalid-name
     assert gen.count("ndf_any_space_4_op4 = op4_proxy%fs_from%get_ndf()") == 1
     assert "ndf_any_space_3_op5" not in gen
     assert "ndf_any_space_4_f1" not in gen
-    # testkern_any_space_1_type requires GH_BASIS on ANY_SPACE_1 and 2 and
-    # DIFF_BASIS on w0
-    # f1 is on ANY_SPACE_1 and f2 is on ANY_SPACE_2. f3 is on W0.
-    assert ("CALL qr%compute_function(BASIS, f1_proxy%vspace, "
-            "dim_any_space_1_f1, ndf_any_space_1_f1, "
-            "basis_any_space_1_f1_qr)" in gen)
-    assert ("CALL qr%compute_function(BASIS, f2_proxy%vspace, "
-            "dim_any_space_2_f2, ndf_any_space_2_f2, "
-            "basis_any_space_2_f2_qr)" in gen)
-    # testkern_any_space_4_type needs GH_BASIS on ANY_SPACE_1 which is the
-    # to-space of op2
-    assert ("CALL qr%compute_function(BASIS, op2_proxy%fs_to, "
-            "dim_any_space_1_op2, ndf_any_space_1_op2, "
-            "basis_any_space_1_op2_qr)" in gen)
-    # Need GH_BASIS and DIFF_BASIS on ANY_SPACE_4 which is to/from-space
-    # of op4
-    assert ("CALL qr%compute_function(BASIS, op4_proxy%fs_from, "
-            "dim_any_space_4_op4, ndf_any_space_4_op4, "
-            "basis_any_space_4_op4_qr)" in gen)
-    assert ("CALL qr%compute_function(DIFF_BASIS, op4_proxy%fs_from, "
-            "diff_dim_any_space_4_op4, ndf_any_space_4_op4, "
-            "diff_basis_any_space_4_op4_qr)" in gen)
+    assert ("CALL op2_proxy%fs_from%compute_basis_function("
+            "basis_any_space_2_op2, ndf_any_space_2_op2, nqp_h, "
+            "nqp_v, xp, zp)" in gen)
+    assert ("CALL op4_proxy%fs_from%compute_diff_basis_function("
+            "diff_basis_any_space_4_op4, ndf_any_space_4_op4, nqp_h, "
+            "nqp_v, xp, zp)" in gen)
 
 
 @pytest.mark.xfail(reason="bug : loop fuse replicates maps in loops")
@@ -2607,21 +2681,6 @@ def test_loopfuse():
     for kern_id in kern_idxs:
         assert kern_id > do_idx and kern_id < enddo_idx
 
-
-def test_named_psy_routine():
-    ''' Check that we generate a subroutine with the expected name
-    if an invoke is named '''
-    for distmem in [False, True]:
-        _, invoke_info = parse(
-            os.path.join(BASE_PATH,
-                         "1.0.1_single_named_invoke.f90"),
-            api="dynamo0.3")
-        psy = PSyFactory("dynamo0.3",
-                         distributed_memory=distmem).create(invoke_info)
-        gen_code = str(psy.gen)
-        # Name should be all lower-case and with spaces replaced by underscores
-        assert "SUBROUTINE invoke_important_invoke" in gen_code
-
 # tests for dynamo0.3 stub generator
 
 
@@ -2639,7 +2698,7 @@ def test_stub_invalid_api():
     assert "Unsupported API 'dynamo0.1' specified" in str(excinfo.value)
 
 
-def test_stub_file_content_not_fortran():  # pylint: disable=invalid-name
+def test_stub_file_content_not_fortran():
     ''' fail if the kernel file does not contain fortran '''
     with pytest.raises(ParseError) as excinfo:
         generate(os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -2714,7 +2773,7 @@ def test_stub_generate_working():
     assert str(result).find(SIMPLE) != -1
 
 
-def test_stub_generate_working_noapi():  # pylint: disable=invalid-name
+def test_stub_generate_working_noapi():
     ''' check that the stub generate produces the expected output when
     we use the default api (which should be dynamo0.3)'''
     result = generate(os.path.join(BASE_PATH, "simple.f90"))
@@ -2771,7 +2830,7 @@ SCALAR_SUMS = (
     "  END MODULE testkern_multiple_scalar_sums_mod")
 
 
-def test_stub_generate_with_scalar_sums():  # pylint: disable=invalid-name
+def test_stub_generate_with_scalar_sums():
     '''check that the stub generator raises an exception when a kernel has
     a reduction (since these are not permitted for user-supplied kernels)'''
     with pytest.raises(ParseError) as err:
@@ -3104,7 +3163,7 @@ end module dummy_mod
 '''
 
 
-def test_stub_operator_different_spaces():  # pylint: disable=invalid-name
+def test_stub_operator_different_spaces():
     ''' test that the correct function spaces are provided in the
     correct order when generating a kernel stub with an operator on
     different spaces '''
@@ -3116,13 +3175,304 @@ def test_stub_operator_different_spaces():  # pylint: disable=invalid-name
     assert "(cell, nlayers, op_1_ncell_3d, op_1, ndf_w0, ndf_w1)" in result
     assert "dimension(ndf_w0,ndf_w1,op_1_ncell_3d)" in result
 
+
+# basis function : spaces
+BASIS = '''
+module dummy_mod
+  type, extends(kernel_type) :: dummy_type
+     type(arg_type), meta_args(7) =    &
+          (/ arg_type(gh_field,   gh_write,w0), &
+             arg_type(gh_operator,gh_inc,  w1, w1), &
+             arg_type(gh_field,   gh_read, w2), &
+             arg_type(gh_operator,gh_write,w3, w3),  &
+             arg_type(gh_field,   gh_write, wtheta), &
+             arg_type(gh_operator,gh_inc, w2h, w2h), &
+             arg_type(gh_field,   gh_read, w2v)  &
+           /)
+     type(func_type), meta_funcs(7) =     &
+          (/ func_type(w0, gh_basis),     &
+             func_type(w1, gh_basis),     &
+             func_type(w2, gh_basis),     &
+             func_type(w3, gh_basis),     &
+             func_type(wtheta, gh_basis), &
+             func_type(w2h, gh_basis),    &
+             func_type(w2v, gh_basis)     &
+           /)
+     integer, parameter :: iterates_over = cells
+     integer, parameter :: gh_shape = gh_quadrature_xyoz
+   contains
+     procedure() :: code => dummy_code
+  end type dummy_type
+contains
+  subroutine dummy_code()
+  end subroutine dummy_code
+end module dummy_mod
+'''
+
+
+def test_basis():
+    ''' Test that basis functions are handled correctly for kernel stubs '''
+    ast = fpapi.parse(BASIS, ignore_comments=False)
+    metadata = DynKernMetadata(ast)
+    kernel = DynKern()
+    kernel.load_meta(metadata)
+    generated_code = kernel.gen_stub
+    output = (
+        "  MODULE dummy_mod\n"
+        "    IMPLICIT NONE\n"
+        "    CONTAINS\n"
+        "    SUBROUTINE dummy_code(cell, nlayers, field_1_w0, op_2_ncell_3d, "
+        "op_2, field_3_w2, op_4_ncell_3d, op_4, field_5_wtheta, "
+        "op_6_ncell_3d, op_6, field_7_w2v, ndf_w0, undf_w0, map_w0, "
+        "basis_w0, ndf_w1, basis_w1, ndf_w2, undf_w2, map_w2, basis_w2, "
+        "ndf_w3, basis_w3, ndf_wtheta, undf_wtheta, map_wtheta, "
+        "basis_wtheta, ndf_w2h, basis_w2h, ndf_w2v, undf_w2v, map_w2v, "
+        "basis_w2v, nqp_h, nqp_v, wh, wv)\n"
+        "      USE constants_mod, ONLY: r_def\n"
+        "      IMPLICIT NONE\n"
+        "      INTEGER, intent(in) :: cell\n"
+        "      INTEGER, intent(in) :: nlayers\n"
+        "      INTEGER, intent(in) :: ndf_w0\n"
+        "      INTEGER, intent(in) :: undf_w0\n"
+        "      INTEGER, intent(in) :: ndf_w1\n"
+        "      INTEGER, intent(in) :: ndf_w2\n"
+        "      INTEGER, intent(in) :: undf_w2\n"
+        "      INTEGER, intent(in) :: ndf_w3\n"
+        "      INTEGER, intent(in) :: ndf_wtheta\n"
+        "      INTEGER, intent(in) :: undf_wtheta\n"
+        "      INTEGER, intent(in) :: ndf_w2h\n"
+        "      INTEGER, intent(in) :: ndf_w2v\n"
+        "      INTEGER, intent(in) :: undf_w2v\n"
+        "      REAL(KIND=r_def), intent(out), dimension(undf_w0) :: "
+        "field_1_w0\n"
+        "      INTEGER, intent(in) :: op_2_ncell_3d\n"
+        "      REAL(KIND=r_def), intent(inout), dimension(ndf_w1,ndf_w1,"
+        "op_2_ncell_3d) :: op_2\n"
+        "      REAL(KIND=r_def), intent(in), dimension(undf_w2) :: "
+        "field_3_w2\n"
+        "      INTEGER, intent(in) :: op_4_ncell_3d\n"
+        "      REAL(KIND=r_def), intent(out), dimension(ndf_w3,ndf_w3,"
+        "op_4_ncell_3d) :: op_4\n"
+        "      REAL(KIND=r_def), intent(out), dimension(undf_wtheta) :: "
+        "field_5_wtheta\n"
+        "      INTEGER, intent(in) :: op_6_ncell_3d\n"
+        "      REAL(KIND=r_def), intent(inout), dimension(ndf_w2h,ndf_w2h,"
+        "op_6_ncell_3d) :: op_6\n"
+        "      REAL(KIND=r_def), intent(in), dimension(undf_w2v) :: "
+        "field_7_w2v\n"
+        "      INTEGER, intent(in), dimension(ndf_w0) :: map_w0\n"
+        "      REAL(KIND=r_def), intent(in), dimension(1,ndf_w0,nqp_h,nqp_v) "
+        ":: basis_w0\n"
+        "      REAL(KIND=r_def), intent(in), dimension(3,ndf_w1,nqp_h,nqp_v) "
+        ":: basis_w1\n"
+        "      INTEGER, intent(in), dimension(ndf_w2) :: map_w2\n"
+        "      REAL(KIND=r_def), intent(in), dimension(3,ndf_w2,nqp_h,nqp_v) "
+        ":: basis_w2\n"
+        "      REAL(KIND=r_def), intent(in), dimension(1,ndf_w3,nqp_h,nqp_v) "
+        ":: basis_w3\n"
+        "      INTEGER, intent(in), dimension(ndf_wtheta) :: map_wtheta\n"
+        "      REAL(KIND=r_def), intent(in), dimension(1,ndf_wtheta,nqp_h,"
+        "nqp_v) :: basis_wtheta\n"
+        "      REAL(KIND=r_def), intent(in), dimension(3,ndf_w2h,nqp_h,nqp_v) "
+        ":: basis_w2h\n"
+        "      INTEGER, intent(in), dimension(ndf_w2v) :: map_w2v\n"
+        "      REAL(KIND=r_def), intent(in), dimension(3,ndf_w2v,nqp_h,nqp_v) "
+        ":: basis_w2v\n"
+        "      INTEGER, intent(in) :: nqp_h, nqp_v\n"
+        "      REAL(KIND=r_def), intent(in), dimension(nqp_h) :: wh\n"
+        "      REAL(KIND=r_def), intent(in), dimension(nqp_v) :: wv\n"
+        "    END SUBROUTINE dummy_code\n"
+        "  END MODULE dummy_mod")
+
+    print output
+    print str(generated_code)
+    assert str(generated_code).find(output) != -1
+
+BASIS_UNSUPPORTED_SPACE = '''
+module dummy_mod
+  type, extends(kernel_type) :: dummy_type
+     type(arg_type), meta_args(1) =    &
+          (/ arg_type(gh_field,gh_write, any_space_1) &
+           /)
+     type(func_type), meta_funcs(1) =    &
+          (/ func_type(any_space_1, gh_basis) &
+           /)
+     integer, parameter :: iterates_over = cells
+     integer, parameter :: gh_shape = gh_quadrature_XYoZ
+   contains
+     procedure() :: code => dummy_code
+  end type dummy_type
+contains
+  subroutine dummy_code()
+  end subroutine dummy_code
+end module dummy_mod
+'''
+
+
+def test_basis_unsupported_space():
+    ''' test that an error is raised when a basis function is on an
+    unsupported space (currently any_space_*) '''
+    ast = fpapi.parse(BASIS_UNSUPPORTED_SPACE, ignore_comments=False)
+    metadata = DynKernMetadata(ast)
+    kernel = DynKern()
+    kernel.load_meta(metadata)
+    with pytest.raises(GenerationError) as excinfo:
+        _ = kernel.gen_stub
+    assert 'Unsupported space for basis function' in str(excinfo.value)
+
+# diff basis function : spaces
+DIFF_BASIS = '''
+module dummy_mod
+  type, extends(kernel_type) :: dummy_type
+     type(arg_type), meta_args(7) =    &
+          (/ arg_type(gh_field,   gh_write,w0), &
+             arg_type(gh_operator,gh_inc,  w1, w1), &
+             arg_type(gh_field,   gh_read, w2), &
+             arg_type(gh_operator,gh_write,w3, w3),  &
+             arg_type(gh_field,   gh_write, wtheta), &
+             arg_type(gh_operator,gh_inc, w2h, w2h), &
+             arg_type(gh_field,   gh_read, w2v)  &
+           /)
+     type(func_type), meta_funcs(7) =          &
+          (/ func_type(w0, gh_diff_basis),     &
+             func_type(w1, gh_diff_basis),     &
+             func_type(w2, gh_diff_basis),     &
+             func_type(w3, gh_diff_basis),     &
+             func_type(wtheta, gh_diff_basis), &
+             func_type(w2h, gh_diff_basis),    &
+             func_type(w2v, gh_diff_basis)     &
+           /)
+     integer, parameter :: iterates_over = cells
+     integer, parameter :: gh_shape = gh_quadrature_XYoZ
+   contains
+     procedure() :: code => dummy_code
+  end type dummy_type
+contains
+  subroutine dummy_code()
+  end subroutine dummy_code
+end module dummy_mod
+'''
+
+
+def test_diff_basis():
+    ''' Test that differential basis functions are handled correctly
+    for kernel stubs '''
+    ast = fpapi.parse(DIFF_BASIS, ignore_comments=False)
+    metadata = DynKernMetadata(ast)
+    kernel = DynKern()
+    kernel.load_meta(metadata)
+    generated_code = kernel.gen_stub
+    output = (
+        "  MODULE dummy_mod\n"
+        "    IMPLICIT NONE\n"
+        "    CONTAINS\n"
+        "    SUBROUTINE dummy_code(cell, nlayers, field_1_w0, op_2_ncell_3d, "
+        "op_2, field_3_w2, op_4_ncell_3d, op_4, field_5_wtheta, "
+        "op_6_ncell_3d, op_6, field_7_w2v, ndf_w0, undf_w0, map_w0, "
+        "diff_basis_w0, ndf_w1, diff_basis_w1, ndf_w2, undf_w2, map_w2, "
+        "diff_basis_w2, ndf_w3, diff_basis_w3, ndf_wtheta, undf_wtheta, "
+        "map_wtheta, diff_basis_wtheta, ndf_w2h, diff_basis_w2h, ndf_w2v, "
+        "undf_w2v, map_w2v, diff_basis_w2v, nqp_h, nqp_v, wh, wv)\n"
+        "      USE constants_mod, ONLY: r_def\n"
+        "      IMPLICIT NONE\n"
+        "      INTEGER, intent(in) :: cell\n"
+        "      INTEGER, intent(in) :: nlayers\n"
+        "      INTEGER, intent(in) :: ndf_w0\n"
+        "      INTEGER, intent(in) :: undf_w0\n"
+        "      INTEGER, intent(in) :: ndf_w1\n"
+        "      INTEGER, intent(in) :: ndf_w2\n"
+        "      INTEGER, intent(in) :: undf_w2\n"
+        "      INTEGER, intent(in) :: ndf_w3\n"
+        "      INTEGER, intent(in) :: ndf_wtheta\n"
+        "      INTEGER, intent(in) :: undf_wtheta\n"
+        "      INTEGER, intent(in) :: ndf_w2h\n"
+        "      INTEGER, intent(in) :: ndf_w2v\n"
+        "      INTEGER, intent(in) :: undf_w2v\n"
+        "      REAL(KIND=r_def), intent(out), dimension(undf_w0) :: "
+        "field_1_w0\n"
+        "      INTEGER, intent(in) :: op_2_ncell_3d\n"
+        "      REAL(KIND=r_def), intent(inout), dimension(ndf_w1,ndf_w1,"
+        "op_2_ncell_3d) :: op_2\n"
+        "      REAL(KIND=r_def), intent(in), dimension(undf_w2) :: "
+        "field_3_w2\n"
+        "      INTEGER, intent(in) :: op_4_ncell_3d\n"
+        "      REAL(KIND=r_def), intent(out), dimension(ndf_w3,ndf_w3,"
+        "op_4_ncell_3d) :: op_4\n"
+        "      REAL(KIND=r_def), intent(out), dimension(undf_wtheta) :: "
+        "field_5_wtheta\n"
+        "      INTEGER, intent(in) :: op_6_ncell_3d\n"
+        "      REAL(KIND=r_def), intent(inout), dimension(ndf_w2h,ndf_w2h,"
+        "op_6_ncell_3d) :: op_6\n"
+        "      REAL(KIND=r_def), intent(in), dimension(undf_w2v) :: "
+        "field_7_w2v\n"
+        "      INTEGER, intent(in), dimension(ndf_w0) :: map_w0\n"
+        "      REAL(KIND=r_def), intent(in), dimension(3,ndf_w0,nqp_h,nqp_v) "
+        ":: diff_basis_w0\n"
+        "      REAL(KIND=r_def), intent(in), dimension(3,ndf_w1,nqp_h,nqp_v) "
+        ":: diff_basis_w1\n"
+        "      INTEGER, intent(in), dimension(ndf_w2) :: map_w2\n"
+        "      REAL(KIND=r_def), intent(in), dimension(1,ndf_w2,nqp_h,nqp_v) "
+        ":: diff_basis_w2\n"
+        "      REAL(KIND=r_def), intent(in), dimension(3,ndf_w3,nqp_h,nqp_v) "
+        ":: diff_basis_w3\n"
+        "      INTEGER, intent(in), dimension(ndf_wtheta) :: map_wtheta\n"
+        "      REAL(KIND=r_def), intent(in), dimension(3,ndf_wtheta,nqp_h,"
+        "nqp_v) :: diff_basis_wtheta\n"
+        "      REAL(KIND=r_def), intent(in), dimension(1,ndf_w2h,nqp_h,nqp_v) "
+        ":: diff_basis_w2h\n"
+        "      INTEGER, intent(in), dimension(ndf_w2v) :: map_w2v\n"
+        "      REAL(KIND=r_def), intent(in), dimension(1,ndf_w2v,nqp_h,nqp_v) "
+        ":: diff_basis_w2v\n"
+        "      INTEGER, intent(in) :: nqp_h, nqp_v\n"
+        "      REAL(KIND=r_def), intent(in), dimension(nqp_h) :: wh\n"
+        "      REAL(KIND=r_def), intent(in), dimension(nqp_v) :: wv\n"
+        "    END SUBROUTINE dummy_code\n"
+        "  END MODULE dummy_mod")
+    print output
+    print str(generated_code)
+    assert str(generated_code).find(output) != -1
+
+DIFF_BASIS_UNSUPPORTED_SPACE = '''
+module dummy_mod
+  type, extends(kernel_type) :: dummy_type
+     type(arg_type), meta_args(1) =    &
+          (/ arg_type(gh_field,gh_write, any_space_1) &
+           /)
+     type(func_type), meta_funcs(1) =    &
+          (/ func_type(any_space_1, gh_diff_basis) &
+           /)
+     integer, parameter :: iterates_over = cells
+     integer, parameter :: gh_shape = gh_quadrature_XYoZ
+   contains
+     procedure() :: code => dummy_code
+  end type dummy_type
+contains
+  subroutine dummy_code()
+  end subroutine dummy_code
+end module dummy_mod
+'''
+
+
+def test_diff_basis_unsupp_space():
+    ''' test that an error is raised when a differential basis
+    function is on an unsupported space (currently any_space_*)'''
+    ast = fpapi.parse(DIFF_BASIS_UNSUPPORTED_SPACE, ignore_comments=False)
+    metadata = DynKernMetadata(ast)
+    kernel = DynKern()
+    kernel.load_meta(metadata)
+    with pytest.raises(GenerationError) as excinfo:
+        _ = kernel.gen_stub
+    assert 'Unsupported space for differential basis function' \
+        in str(excinfo.value)
+
 # orientation : spaces
 
 ORIENTATION_OUTPUT = (
     "    SUBROUTINE dummy_orientation_code(cell, nlayers, field_1_w0, "
     "op_2_ncell_3d, op_2, field_3_w2, op_4_ncell_3d, op_4, ndf_w0, "
     "undf_w0, map_w0, orientation_w0, ndf_w1, orientation_w1, ndf_w2, "
-    "undf_w2, map_w2, orientation_w2, ndf_w3, orientation_w3)\n"
+    "undf_w2, map_w2, orientation_w2, ndf_w3, orientation_w3, nqp_h, "
+    "nqp_v, wh, wv)\n"
     "      USE constants_mod, ONLY: r_def\n"
     "      IMPLICIT NONE\n"
     "      INTEGER, intent(in) :: cell\n"
@@ -3149,6 +3499,9 @@ ORIENTATION_OUTPUT = (
     "      INTEGER, intent(in), dimension(ndf_w2) :: map_w2\n"
     "      INTEGER, intent(in), dimension(ndf_w2) :: orientation_w2\n"
     "      INTEGER, intent(in), dimension(ndf_w3) :: orientation_w3\n"
+    "      INTEGER, intent(in) :: nqp_h, nqp_v\n"
+    "      REAL(KIND=r_def), intent(in), dimension(nqp_h) :: wh\n"
+    "      REAL(KIND=r_def), intent(in), dimension(nqp_v) :: wv\n"
     "    END SUBROUTINE dummy_orientation_code\n"
     "  END MODULE dummy_orientation_mod")
 
@@ -3460,7 +3813,7 @@ def test_stencil_metadata():
     assert stencil_descriptor_1.stencil['extent'] is None
 
 
-def test_field_metadata_too_many_arguments():  # pylint: disable=invalid-name
+def test_field_metadata_too_many_arguments():
     '''Check that we raise an exception if more than 4 arguments are
     provided in the metadata for a gh_field arg_type.'''
     result = STENCIL_CODE.replace(
@@ -3475,22 +3828,14 @@ def test_field_metadata_too_many_arguments():  # pylint: disable=invalid-name
 
 def test_invalid_stencil_form_1():
     '''Check that we raise an exception if the stencil does not obey the
-    stencil(<type>[,<extent>]) format by being a literal integer or
-    just "stencil" '''
+    stencil(<type>[,<extent>]) format by being a literal integer'''
     result = STENCIL_CODE.replace("stencil(cross)", "1", 1)
     ast = fpapi.parse(result, ignore_comments=False)
     with pytest.raises(ParseError) as excinfo:
         _ = DynKernMetadata(ast)
-    assert "entry must be either a valid stencil specification" \
+    assert "entry must be a valid stencil specification" \
         in str(excinfo.value)
-    assert "Unrecognised meta-data entry" in str(excinfo.value)
-    result = STENCIL_CODE.replace("stencil(cross)", "stencil", 1)
-    ast = fpapi.parse(result, ignore_comments=False)
-    with pytest.raises(ParseError) as excinfo:
-        _ = DynKernMetadata(ast)
-    assert "entry must be either a valid stencil specification" \
-        in str(excinfo.value)
-    assert "Expecting format stencil(<type>[,<extent>]) but found stencil" \
+    assert "but found the literal" \
         in str(excinfo.value)
 
 
@@ -3501,7 +3846,7 @@ def test_invalid_stencil_form_2():
     ast = fpapi.parse(result, ignore_comments=False)
     with pytest.raises(ParseError) as excinfo:
         _ = DynKernMetadata(ast)
-    assert "entry must be either a valid stencil specification" \
+    assert "entry must be a valid stencil specification" \
         in str(excinfo.value)
 
 
@@ -3512,7 +3857,7 @@ def test_invalid_stencil_form_3():
     ast = fpapi.parse(result, ignore_comments=False)
     with pytest.raises(ParseError) as excinfo:
         _ = DynKernMetadata(ast)
-    assert "entry must be either a valid stencil specification" \
+    assert "entry must be a valid stencil specification" \
         in str(excinfo.value)
 
 
@@ -3547,13 +3892,13 @@ def test_invalid_stencil_form_6():
     ast = fpapi.parse(result, ignore_comments=False)
     with pytest.raises(ParseError) as excinfo:
         _ = DynKernMetadata(ast)
-    assert "entry must be either a valid stencil specification" \
+    assert "entry must be a valid stencil specification" \
         in str(excinfo.value)
     assert "there must be at most two arguments inside the brackets" \
         in str(excinfo.value)
 
 
-def test_invalid_stencil_first_arg_1():  # pylint: disable=invalid-name
+def test_invalid_stencil_first_arg_1():
     '''Check that we raise an exception if the value of the stencil type in
     stencil(<type>[,<extent>]) is not valid and is an integer'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(1)", 1)
@@ -3564,7 +3909,7 @@ def test_invalid_stencil_first_arg_1():  # pylint: disable=invalid-name
     assert "is a literal" in str(excinfo.value)
 
 
-def test_invalid_stencil_first_arg_2():  # pylint: disable=invalid-name
+def test_invalid_stencil_first_arg_2():
     '''Check that we raise an exception if the value of the stencil type in
     stencil(<type>[,<extent>]) is not valid and is a name'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(cros)", 1)
@@ -3574,7 +3919,7 @@ def test_invalid_stencil_first_arg_2():  # pylint: disable=invalid-name
     assert "not one of the valid types" in str(excinfo.value)
 
 
-def test_invalid_stencil_first_arg_3():  # pylint: disable=invalid-name
+def test_invalid_stencil_first_arg_3():
     '''Check that we raise an exception if the value of the stencil type in
     stencil(<type>[,<extent>]) is not valid and has brackets'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(x1d(xx))", 1)
@@ -3585,7 +3930,7 @@ def test_invalid_stencil_first_arg_3():  # pylint: disable=invalid-name
     assert "includes brackets" in str(excinfo.value)
 
 
-def test_invalid_stencil_second_arg_1():  # pylint: disable=invalid-name
+def test_invalid_stencil_second_arg_1():
     '''Check that we raise an exception if the value of the stencil extent in
     stencil(<type>[,<extent>]) is not an integer'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(x1d,x1d)", 1)
@@ -3596,7 +3941,7 @@ def test_invalid_stencil_second_arg_1():  # pylint: disable=invalid-name
     assert "is not an integer" in str(excinfo.value)
 
 
-def test_invalid_stencil_second_arg_2():  # pylint: disable=invalid-name
+def test_invalid_stencil_second_arg_2():
     '''Check that we raise an exception if the value of the stencil extent in
     stencil(<type>[,<extent>]) is less than 1'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(x1d,0)", 1)
@@ -3607,7 +3952,7 @@ def test_invalid_stencil_second_arg_2():  # pylint: disable=invalid-name
     assert "is less than 1" in str(excinfo.value)
 
 
-def test_unsupported_second_argument():  # pylint: disable=invalid-name
+def test_unsupported_second_argument():
     '''Check that we raise an exception if stencil extent is specified, as
     we do not currently support it'''
     result = STENCIL_CODE.replace("stencil(cross)", "stencil(x1d,1)", 1)
@@ -3627,7 +3972,7 @@ def test_valid_stencil_types():
         _ = DynKernMetadata(ast)
 
 
-def test_arg_descriptor_funcs_method_error():  # pylint: disable=invalid-name
+def test_arg_descriptor_functions_method_error():
     ''' Tests that an internal error is raised in DynArgDescriptor03
     when function_spaces is called and the internal type is an
     unexpected value. It should not be possible to get to here so we
@@ -3643,7 +3988,7 @@ def test_arg_descriptor_funcs_method_error():  # pylint: disable=invalid-name
         'not get to here' in str(excinfo.value)
 
 
-def test_DynKernelArgument_intent_invalid():  # pylint: disable=invalid-name
+def test_DynKernelArgument_intent_invalid():
     '''Tests that an error is raised in DynKernelArgument when an invalid
     intent value is found. Tests with and without distributed memory '''
     _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
@@ -3719,40 +4064,7 @@ def test_arg_intent_error():
             str(excinfo))
 
 
-def test_no_arg_on_space(monkeypatch):
-    ''' Tests that DynKernelArguments.get_arg_on_space[,_name] raise
-    the appropriate error when there is no kernel argument on the
-    supplied space. '''
-    from psyclone.psyGen import FieldNotFoundError
-    _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
-                           api="dynamo0.3")
-    psy = PSyFactory("dynamo0.3").create(invoke_info)
-    first_invoke = psy.invokes.invoke_list[0]
-    first_kernel = first_invoke.schedule.kern_calls()[0]
-    kernel_args = first_kernel.arguments
-    # Test getting the argument by the meta-data name for the function space
-    arg = kernel_args.get_arg_on_space_name("w2")
-    assert arg.name == "f2"
-    with pytest.raises(FieldNotFoundError) as excinfo:
-        _ = kernel_args.get_arg_on_space_name("not_a_space")
-    assert ("there is no field or operator with function space not_a_space" in
-            str(excinfo))
-    # Now test get_arg_on_space - we need a FunctionSpace object for this
-    fspace = arg.function_space
-    arg = kernel_args.get_arg_on_space(fspace)
-    assert arg.name == "f2"
-    # Take a deep copy of the function space object so that we get a new
-    # one whose state we can monkeypatch
-    import copy
-    fspace = copy.deepcopy(arg.function_space)
-    monkeypatch.setattr(fspace, "_mangled_name", "not_a_space_name")
-    with pytest.raises(FieldNotFoundError) as excinfo:
-        _ = kernel_args.get_arg_on_space(fspace)
-    assert ("there is no field or operator with function space w2 (mangled "
-            "name = 'not_a_space_name')" in str(excinfo))
-
-
-def test_arg_descriptor_func_method_error():  # pylint: disable=invalid-name
+def test_arg_descriptor_function_method_error():
     ''' Tests that an internal error is raised in DynArgDescriptor03
     when function_space is called and the internal type is an
     unexpected value. It should not be possible to get to here so we
@@ -3830,7 +4142,7 @@ def test_arg_descriptor_repr():
         in result
 
 
-def test_arg_desc_func_space_tofrom_err():  # pylint: disable=invalid-name
+def test_arg_descriptor_function_space_tofrom_error():
     ''' Tests that an internal error is raised in DynArgDescriptor03
     when function_space_to or function_space_from is called and the
     internal type is not gh_operator.'''
@@ -3879,7 +4191,7 @@ def test_mangle_function_space():
     assert name == "any_space_2_f2"
 
 
-def test_no_mangle_specified_function_space():  # pylint: disable=invalid-name
+def test_no_mangle_specified_function_space():
     ''' Test that we do not name-mangle a function space that is not
     any_space '''
     from psyclone.dynamo0p3 import mangle_fs_name
@@ -3893,7 +4205,7 @@ def test_no_mangle_specified_function_space():  # pylint: disable=invalid-name
     assert name == "w2"
 
 
-def test_fsdescriptors_get_descriptor():  # pylint: disable=invalid-name
+def test_fsdescriptors_get_descriptor():
     ''' Test that FSDescriptors.get_descriptor() raises the expected error
     when passed a function space for which there is no corresponding kernel
     argument '''
@@ -3971,6 +4283,18 @@ def test_dynkern_arg_for_fs():
     with pytest.raises(GenerationError) as err:
         _ = first_invoke.arg_for_funcspace(FunctionSpace("waah", "waah"))
     assert "No argument found on 'waah' space" in str(err)
+
+
+def test_dynkern_op_name():
+    ''' Test that DynInvoke.get_operator_name() raises an error if
+    passed an invalid function space '''
+    _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
+                           api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3").create(invoke_info)
+    first_invoke = psy.invokes.invoke_list[0]
+    with pytest.raises(GenerationError) as err:
+        _ = first_invoke.get_fs_operator_name("gh_orientation", "w3")
+    assert "no kern call with function space 'w3' and" in str(err)
 
 
 def test_dist_memory_true():
@@ -4138,7 +4462,7 @@ def test_halo_exchange_inc():
     assert result.count("halo_exchange") == 7
 
 
-def test_no_halo_exchange_for_operator():  # pylint: disable=invalid-name
+def test_no_halo_exchange_for_operator():
     ''' Test that no halo exchange is generated before a kernel that reads
     from an operator '''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -4166,7 +4490,7 @@ def test_no_set_dirty_for_operator():
     assert "is_dirty" not in result
 
 
-def test_halo_exchange_different_spaces():  # pylint: disable=invalid-name
+def test_halo_exchange_different_spaces():
     '''test that all of our different function spaces with a stencil
     access result in halo calls including any_space'''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -4245,7 +4569,7 @@ def test_halo_exchange_depths():
     assert expected in result
 
 
-def test_halo_exchange_depths_gh_inc():  # pylint: disable=invalid-name
+def test_halo_exchange_depths_gh_inc():
     ''' test that halo exchange includes the correct halo depth when
     we have a gh_inc as this increases the required depth by 1 (as
     redundant computation is performed in the l1 halo) '''
@@ -4325,7 +4649,7 @@ def test_halo_exchange_view(capsys):
         "check_dirty=True]\n"
         "    " + exch + "[field='f4', type='region', depth=1, "
         "check_dirty=True]\n"
-        "    " + loop + "[type='',field_space='w1',it_space='cells', "
+        "    " + loop + "[type='',field_space='w1',it_space='cells' "
         "upper_bound='cell_halo(1)']\n"
         "        " + call + " testkern_stencil_code(f1,f2,f3,f4) "
         "[module_inline=False]")
@@ -4389,7 +4713,7 @@ def test_set_upper_bound_functions():
     my_loop = DynLoop()
     with pytest.raises(GenerationError) as excinfo:
         my_loop.set_upper_bound("invalid_loop_bounds_name")
-    assert "upper loop bound name is invalid" in str(excinfo.value)
+    assert "upper bound loop name is invalid" in str(excinfo.value)
     with pytest.raises(GenerationError) as excinfo:
         my_loop.set_upper_bound("start")
     assert "'start' is not a valid upper bound" in str(excinfo.value)
@@ -4431,7 +4755,7 @@ def test_lower_bound_fortran_2(monkeypatch):
 
 def test_upper_bound_fortran_1():
     '''tests we raise an exception in the DynLoop:_upper_bound_fortran()
-    method when 'cell_halo', 'dof_halo' or 'inner' are used'''
+    method whe 'cell_halo', 'dof_halo' or 'inner' are used'''
     _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
                            api="dynamo0.3")
     psy = PSyFactory("dynamo0.3", distributed_memory=False).create(invoke_info)
@@ -4474,7 +4798,7 @@ def test_intent_multi_kern():
         assert "TYPE(field_type), intent(inout) :: g, f\n" in output
         assert "TYPE(field_type), intent(inout) :: b, h\n" in output
         assert "TYPE(field_type), intent(in) :: c, d, a, e(3)\n" in output
-        assert "TYPE(quadrature_xyoz_type), intent(in) :: qr\n" in output
+        assert "TYPE(quadrature_type), intent(in) :: qr\n" in output
 
 
 def test_field_gh_sum_invalid():
@@ -4769,7 +5093,7 @@ def test_stencil_region_unsupported():
             str(excinfo.value)
 
 
-def test_single_stencil_xory1d_literal():  # pylint: disable=invalid-name
+def test_single_stencil_xory1d_literal():
     '''test extent value is used correctly from the algorithm layer when
     it is a literal value so is not passed by argument'''
     for dist_mem in [False, True]:
@@ -4824,7 +5148,7 @@ def test_single_stencil_xory1d_literal():  # pylint: disable=invalid-name
         assert output6 in result
 
 
-def test_single_stencil_xory1d_literal_mixed():  # pylint: disable=invalid-name
+def test_single_stencil_xory1d_literal_mixed():
     '''test extent value is used correctly from the algorithm layer when
     it is a literal value so is not passed by argument and the case of the
     literal is specified in mixed case'''
@@ -5031,7 +5355,7 @@ def test_multiple_stencil_same_name():
         assert output5 in result
 
 
-def test_multi_stencil_same_name_direction():  # pylint: disable=invalid-name
+def test_multiple_stencil_same_name_direction():
     '''test the case where there is more than one stencil in a kernel with
     the same name for direction'''
     for dist_mem in [False, True]:
@@ -5112,7 +5436,7 @@ def test_multi_stencil_same_name_direction():  # pylint: disable=invalid-name
         assert output5 in result
 
 
-def test_multi_kerns_stencils_diff_fields():  # pylint: disable=invalid-name
+def test_multiple_kernels_stencils_different_fields():
     '''Test the case where we have multiple kernels with stencils and
     different fields for each. We also test extent names by having both
     shared and individual names.'''
@@ -5325,7 +5649,7 @@ def test_two_stencils_same_field():
         assert output7 in result
 
 
-def test_stencils_same_field_literal_extent():  # pylint: disable=invalid-name
+def test_stencils_same_field_literal_extent():
     '''Test three Kernels within an invoke, with the same field having a
     stencil access in each kernel and the extent being passed as a
     literal value. Extent is the same in two kernels and different in
@@ -5378,15 +5702,15 @@ def test_stencils_same_field_literal_extent():  # pylint: disable=invalid-name
         assert result.count(output4) == 1
 
         if dist_mem:
-            assert "IF (f2_proxy%is_dirty(depth=3)) THEN" in result
-            assert "CALL f2_proxy%halo_exchange(depth=3)" in result
-            assert "IF (f3_proxy%is_dirty(depth=1)) THEN" in result
-            assert "CALL f3_proxy%halo_exchange(depth=1)" in result
-            assert "IF (f4_proxy%is_dirty(depth=1)) THEN" in result
-            assert "CALL f4_proxy%halo_exchange(depth=1)" in result
+            assert ("IF (f2_proxy%is_dirty(depth=3)) THEN" in result)
+            assert ("CALL f2_proxy%halo_exchange(depth=3)" in result)
+            assert ("IF (f3_proxy%is_dirty(depth=1)) THEN" in result)
+            assert ("CALL f3_proxy%halo_exchange(depth=1)" in result)
+            assert ("IF (f4_proxy%is_dirty(depth=1)) THEN" in result)
+            assert ("CALL f4_proxy%halo_exchange(depth=1)" in result)
 
 
-def test_stencils_same_field_literal_direct():  # pylint: disable=invalid-name
+def test_stencils_same_field_literal_direction():
     '''Test three Kernels within an invoke, with the same field having a
     stencil access in each kernel and the direction being passed as a
     literal value. In two kernels the direction value is the same and
@@ -5451,12 +5775,12 @@ def test_stencils_same_field_literal_direct():  # pylint: disable=invalid-name
         assert result.count(output4) == 1
 
         if dist_mem:
-            assert "IF (f2_proxy%is_dirty(depth=3)) THEN" in result
-            assert "CALL f2_proxy%halo_exchange(depth=3)" in result
-            assert "IF (f3_proxy%is_dirty(depth=1)) THEN" in result
-            assert "CALL f3_proxy%halo_exchange(depth=1)" in result
-            assert "IF (f4_proxy%is_dirty(depth=1)) THEN" in result
-            assert "CALL f4_proxy%halo_exchange(depth=1)" in result
+            assert ("IF (f2_proxy%is_dirty(depth=3)) THEN" in result)
+            assert ("CALL f2_proxy%halo_exchange(depth=3)" in result)
+            assert ("IF (f3_proxy%is_dirty(depth=1)) THEN" in result)
+            assert ("CALL f3_proxy%halo_exchange(depth=1)" in result)
+            assert ("IF (f4_proxy%is_dirty(depth=1)) THEN" in result)
+            assert ("CALL f4_proxy%halo_exchange(depth=1)" in result)
 
 
 def test_stencil_extent_specified():
@@ -5482,7 +5806,7 @@ def test_stencil_extent_specified():
             "This is not coded for." in str(err))
 
 
-def test_haloexchange_unknown_halo_depth():  # pylint: disable=invalid-name
+def test_haloexchange_unknown_halo_depth():
     '''If a stencil extent is provided in the kernel metadata then the
     value is stored in an instance of the DynHaloExchange class. This test
     checks that the value is stored as expected (although stencil extents
@@ -5499,7 +5823,7 @@ def test_haloexchange_unknown_halo_depth():  # pylint: disable=invalid-name
     # artificially add an extent to the stencil metadata info
     stencil_arg.descriptor.stencil['extent'] = 10
     halo_exchange = schedule.children[0]
-    assert halo_exchange._compute_halo_depth() == '11'
+    assert halo_exchange._compute_halo_depth == '11'
 
 
 def test_haloexchange_correct_parent():  # pylint: disable=invalid-name
@@ -5514,7 +5838,7 @@ def test_haloexchange_correct_parent():  # pylint: disable=invalid-name
         assert child.parent == schedule
 
 
-def test_one_kern_multi_field_same_stencil():  # pylint: disable=invalid-name
+def test_single_kernel_multi_field_same_stencil():
     '''This test checks for the case where we have the same stencil used
     by more than one field in a kernel'''
     for dist_mem in [False, True]:
@@ -5575,7 +5899,7 @@ def test_one_kern_multi_field_same_stencil():  # pylint: disable=invalid-name
         assert output5 in result
 
 
-def test_single_kernel_any_space_stencil():  # pylint: disable=invalid-name
+def test_single_kernel_any_space_stencil():
     '''This is a test for stencils and any_space within a single kernel
     and between kernels. We test when any_space is the same and when
     it is different within kernels and between kernels for the case of
@@ -5629,7 +5953,7 @@ def test_single_kernel_any_space_stencil():  # pylint: disable=invalid-name
 
 
 @pytest.mark.xfail(reason="stencils and any_space produces too many dofmaps")
-def test_multi_kernel_any_space_stencil_1():  # pylint: disable=invalid-name
+def test_multi_kernel_any_space_stencil_1():
     '''This is a test for stencils and any_space with two kernels. We test
     when any_space is the same and when it is different for the same
     field. In our example we should have a single dofmap. However, at
@@ -5782,10 +6106,10 @@ def test_stencil_args_unique_2():
             assert (
                 "CALL f2_proxy%halo_exchange(depth=max(f2_info+1,"
                 "f2_info_2+1))" in result)
-            assert "IF (f3_proxy%is_dirty(depth=1)) THEN" in result
-            assert "CALL f3_proxy%halo_exchange(depth=1)" in result
-            assert "IF (f4_proxy%is_dirty(depth=1)) THEN" in result
-            assert "CALL f4_proxy%halo_exchange(depth=1)" in result
+            assert ("IF (f3_proxy%is_dirty(depth=1)) THEN" in result)
+            assert ("CALL f3_proxy%halo_exchange(depth=1)" in result)
+            assert ("IF (f4_proxy%is_dirty(depth=1)) THEN" in result)
+            assert ("CALL f4_proxy%halo_exchange(depth=1)" in result)
 
 
 def test_stencil_args_unique_3():
@@ -5816,13 +6140,13 @@ def test_stencil_args_unique_3():
             assert (
                 "CALL f2_proxy%halo_exchange(depth=max(my_info_f2_info+1,"
                 "my_info_f2_info_2+1))" in result)
-            assert "IF (f3_proxy%is_dirty(depth=1)) THEN" in result
-            assert "CALL f3_proxy%halo_exchange(depth=1)" in result
-            assert "IF (f4_proxy%is_dirty(depth=1)) THEN" in result
-            assert "CALL f4_proxy%halo_exchange(depth=1)" in result
+            assert ("IF (f3_proxy%is_dirty(depth=1)) THEN" in result)
+            assert ("CALL f3_proxy%halo_exchange(depth=1)" in result)
+            assert ("IF (f4_proxy%is_dirty(depth=1)) THEN" in result)
+            assert ("CALL f4_proxy%halo_exchange(depth=1)" in result)
 
 
-def test_dynloop_load_unexpected_func_space():  # pylint: disable=invalid-name
+def test_dynloop_load_unexpected_function_space():
     '''The load function of an instance of the dynloop class raises an
     error if an unexpexted function space is found. This test makes
     sure this error works correctly. It's a little tricky to raise
@@ -5858,7 +6182,7 @@ def test_dynloop_load_unexpected_func_space():  # pylint: disable=invalid-name
             "'any_w2'] but found 'broken'" in str(err))
 
 
-def test_dynkernargs_unexpect_stencil_extent():  # pylint: disable=invalid-name
+def test_dynkernelarguments_unexpected_stencil_extent():
     '''This test checks that we raise an error in DynKernelArguments if
     metadata is provided with an extent value. This is a litle tricky to
     raise as the parser does not not allow this to happen. We therefore
@@ -5882,7 +6206,7 @@ def test_dynkernargs_unexpect_stencil_extent():  # pylint: disable=invalid-name
     assert "extent metadata not yet supported" in str(err)
 
 
-def test_unsupported_halo_read_access():  # pylint: disable=invalid-name
+def test_unsupported_halo_read_access():
     '''This test checks that we raise an error if the halo_read_access
     method finds an upper bound other than halo or ncells. The
     particular issue at the moment is that if inner is specified we do
@@ -5906,11 +6230,10 @@ def test_unsupported_halo_read_access():  # pylint: disable=invalid-name
     with pytest.raises(GenerationError) as err:
         _ = loop._halo_read_access(stencil_arg)
     assert ("Loop bounds other than cell_halo and ncells are currently "
-            "unsupported for kernels with stencil accesses. Found "
-            "'inner'." in str(err))
+            "unsupported. Found 'inner'." in str(err))
 
 
-def test_dynglobalsum_unsupported_scalar():  # pylint: disable=invalid-name
+def test_dynglobalsum_unsupported_scalar():
     '''Check that an instance of the DynGlobalSum class raises an
     exception if an unsupported scalar type is provided when
     dm=True '''
@@ -5996,7 +6319,7 @@ end module testkern
             "testkern_type" in str(excinfo))
 
 
-def test_multiple_updated_field_args():  # pylint: disable=invalid-name
+def test_multiple_updated_field_args():
     ''' Check that we successfully parse a kernel that writes to more
     than one of its field arguments '''
     fparser.logging.disable('CRITICAL')
@@ -6030,7 +6353,7 @@ def test_multiple_updated_op_args():
     assert count == 2
 
 
-def test_multiple_updated_scalar_args():  # pylint: disable=invalid-name
+def test_multiple_updated_scalar_args():
     ''' Check that we raise the expected exception when we encounter a
     kernel that writes to more than one of its field and scalar arguments '''
     fparser.logging.disable('CRITICAL')
@@ -6293,7 +6616,7 @@ def test_kernel_stub_ind_dofmap_errors():  # pylint: disable=invalid-name
             "got") in str(excinfo)
 
 
-def test_kerncallarglist_arglist_error():  # pylint: disable=invalid-name
+def test_kerncallarglist_arglist_error():
     '''Check that we raise an exception if we call the arglist method in
     kerncallarglist without first calling the generate method'''
     for distmem in [False, True]:
@@ -6320,7 +6643,7 @@ def test_kerncallarglist_arglist_error():  # pylint: disable=invalid-name
             "called?") in str(excinfo.value)
 
 
-def test_kernstubarglist_arglist_error():  # pylint: disable=invalid-name
+def test_kernstubarglist_arglist_error():
     '''Check that we raise an exception if we call the arglist method in
     kernstubarglist without first calling the generate method'''
     ast = fpapi.parse(os.path.join(BASE_PATH,
@@ -6360,7 +6683,7 @@ def test_multi_anyw2():
                 "      !\n"
                 "      map_any_w2 => f1_proxy%vspace%get_whole_dofmap()\n"
                 "      !\n"
-                "      ! Initialise number of DoFs "
+                "      ! Initialise sizes and allocate any basis arrays "
                 "for any_w2\n"
                 "      !\n"
                 "      ndf_any_w2 = f1_proxy%vspace%get_ndf()\n"
@@ -6394,7 +6717,7 @@ def test_multi_anyw2():
                 "      !\n"
                 "      map_any_w2 => f1_proxy%vspace%get_whole_dofmap()\n"
                 "      !\n"
-                "      ! Initialise number of DoFs for "
+                "      ! Initialise sizes and allocate any basis arrays for "
                 "any_w2\n"
                 "      !\n"
                 "      ndf_any_w2 = f1_proxy%vspace%get_ndf()\n"
@@ -6409,6 +6732,40 @@ def test_multi_anyw2():
                 "undf_any_w2, map_any_w2(:,cell))\n"
                 "      END DO ")
             assert output in generated_code
+
+
+def test_anyw2_basis():
+    '''Check generated code works correctly when we have any_w2 fields
+    and basis functions'''
+    _, invoke_info = parse(
+        os.path.join(BASE_PATH, "21.2_single_invoke_multi_anyw2_basis.f90"),
+        api="dynamo0.3")
+    for dist_mem in [False, True]:
+        psy = PSyFactory("dynamo0.3",
+                         distributed_memory=dist_mem).create(invoke_info)
+        generated_code = str(psy.gen)
+        print generated_code
+        output = (
+            "      ! Initialise sizes and allocate any basis arrays "
+            "for any_w2\n"
+            "      !\n"
+            "      ndf_any_w2 = f1_proxy%vspace%get_ndf()\n"
+            "      undf_any_w2 = f1_proxy%vspace%get_undf()\n"
+            "      dim_any_w2 = f1_proxy%vspace%get_dim_space()\n"
+            "      ALLOCATE (basis_any_w2(dim_any_w2, ndf_any_w2, nqp_h, "
+            "nqp_v))\n"
+            "      diff_dim_any_w2 = f1_proxy%vspace%"
+            "get_dim_space_diff()\n"
+            "      ALLOCATE (diff_basis_any_w2(diff_dim_any_w2, "
+            "ndf_any_w2, nqp_h, nqp_v))\n"
+            "      !\n"
+            "      ! Compute basis arrays\n"
+            "      !\n"
+            "      CALL f1_proxy%vspace%compute_basis_function("
+            "basis_any_w2, ndf_any_w2, nqp_h, nqp_v, xp, zp)\n"
+            "      CALL f1_proxy%vspace%compute_diff_basis_function("
+            "diff_basis_any_w2, ndf_any_w2, nqp_h, nqp_v, xp, zp)")
+        assert output in generated_code
 
 
 def test_anyw2_vectors():
@@ -6439,20 +6796,19 @@ def test_anyw2_operators():
         generated_code = str(psy.gen)
         print generated_code
         output = (
-            "      ! Initialise number of DoFs for any_w2\n"
+            "      ! Initialise sizes and allocate any basis arrays for "
+            "any_w2\n"
             "      !\n"
             "      ndf_any_w2 = mm_w2_proxy%fs_from%get_ndf()\n"
-            "      undf_any_w2 = mm_w2_proxy%fs_from%get_undf()\n")
-        assert output in generated_code
-        output = (
+            "      undf_any_w2 = mm_w2_proxy%fs_from%get_undf()\n"
             "      dim_any_w2 = mm_w2_proxy%fs_from%get_dim_space()\n"
-            "      ALLOCATE (basis_any_w2_qr(dim_any_w2, ndf_any_w2, "
-            "np_xy_qr, np_z_qr))\n"
+            "      ALLOCATE (basis_any_w2(dim_any_w2, ndf_any_w2, nqp_h, "
+            "nqp_v))\n"
             "      !\n"
             "      ! Compute basis arrays\n"
             "      !\n"
-            "      CALL qr%compute_function(BASIS, mm_w2_proxy%fs_from, "
-            "dim_any_w2, ndf_any_w2, basis_any_w2_qr)")
+            "      CALL mm_w2_proxy%fs_from%compute_basis_function("
+            "basis_any_w2, ndf_any_w2, nqp_h, nqp_v, xp, zp)")
         assert output in generated_code
 
 
@@ -6484,14 +6840,14 @@ def test_stub_generate_with_anyw2():
     have any_w2 fields. In particular, check basis functions as these
     have specific sizes associated with the particular function space'''
     result = generate(os.path.join(BASE_PATH,
-                                   "testkern_multi_anyw2_basis_mod.f90"),
+                                   "testkern_multi_anyw2_basis.f90"),
                       api="dynamo0.3")
     print result
     expected_output = (
         "      REAL(KIND=r_def), intent(in), dimension(3,ndf_any_w2,"
-        "np_xy,np_z) :: basis_any_w2\n"
+        "nqp_h,nqp_v) :: basis_any_w2\n"
         "      REAL(KIND=r_def), intent(in), dimension(1,ndf_any_w2,"
-        "np_xy,np_z) :: diff_basis_any_w2")
+        "nqp_h,nqp_v) :: diff_basis_any_w2")
     assert expected_output in str(result)
 
 
@@ -6520,6 +6876,8 @@ def test_halo_for_discontinuous():
                                  "1_single_invoke_w3.f90"),
                     api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(info)
+    invoke = psy.invokes.invoke_list[0]
+    schedule = invoke.schedule
     result = str(psy.gen)
     print result
     assert "IF (f1_proxy%is_dirty(depth=1)) THEN" in result
@@ -6540,6 +6898,8 @@ def test_halo_for_discontinuous_2():
                                  "14.7_halo_annexed.f90"),
                     api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(info)
+    invoke = psy.invokes.invoke_list[0]
+    schedule = invoke.schedule
     result = str(psy.gen)
     print result
     assert "IF (f1_proxy%is_dirty(depth=1)) THEN" not in result
@@ -6588,12 +6948,12 @@ def test_arg_discontinous():
     assert not field.discontinuous
 
 
-def test_halo_stencil_redundant_computation():  # pylint: disable=invalid-name
+def test_halo_stencil_redundant_computation():
     '''If a loop contains a kernel with a stencil access and the loop
     computes redundantly into the halo then the value of the stencil
     in the associated halo exchange is returned as type region
     irrespective of the type of kernel stencil. This is because the
-    redundant computation will be performed all points (equivalent
+    redundant computation will be performed all all points (equivalent
     to a full halo) and there is no support for mixing accesses at
     different levels. In this example the kernel stencil is cross.'''
 
@@ -6603,10 +6963,10 @@ def test_halo_stencil_redundant_computation():  # pylint: disable=invalid-name
     psy = PSyFactory("dynamo0.3").create(info)
     schedule = psy.invokes.invoke_list[0].schedule
     stencil_halo_exchange = schedule.children[0]
-    assert stencil_halo_exchange._compute_stencil_type() == "region"
+    assert stencil_halo_exchange._compute_stencil_type == "region"
 
 
-def test_halo_same_stencils_no_red_comp():  # pylint: disable=invalid-name
+def test_halo_same_stencils_no_redundant_computation():
     '''If a halo has two or more different halo reads associated with it
     and the type of stencils are the same and the loops do not
     redundantly compute into the halo then the chosen stencil type for
@@ -6618,10 +6978,10 @@ def test_halo_same_stencils_no_red_comp():  # pylint: disable=invalid-name
     psy = PSyFactory("dynamo0.3").create(info)
     schedule = psy.invokes.invoke_list[0].schedule
     stencil_halo_exchange = schedule.children[1]
-    assert stencil_halo_exchange._compute_stencil_type() == "cross"
+    assert stencil_halo_exchange._compute_stencil_type == "cross"
 
 
-def test_halo_different_stencils_no_red_comp():  # pylint: disable=invalid-name
+def test_halo_different_stencils_no_redundant_computation():
     '''If a halo has two or more different halo reads associated with it
     and the type of stencils are different and the loops do not
     redundantly compute into the halo then the chosen stencil type is
@@ -6634,11 +6994,11 @@ def test_halo_different_stencils_no_red_comp():  # pylint: disable=invalid-name
     psy = PSyFactory("dynamo0.3").create(info)
     schedule = psy.invokes.invoke_list[0].schedule
     stencil_halo_exchange = schedule.children[1]
-    assert stencil_halo_exchange._compute_stencil_type() == "region"
+    assert stencil_halo_exchange._compute_stencil_type == "region"
 
 
-def test_comp_halo_intern_err(monkeypatch):  # pylint: disable=invalid-name
-    '''Check that we raise an exception if the compute_halo_read_info method in
+def test_halo_compute_halo_internal_error(monkeypatch):
+    '''Check that we raise an exception if the compute_halo_info method in
     dynhaloexchange does not find any read dependencies. This should
     never be the case. We use monkeypatch to force the exception to be
     raised'''
@@ -6648,14 +7008,14 @@ def test_comp_halo_intern_err(monkeypatch):  # pylint: disable=invalid-name
     schedule = psy.invokes.invoke_list[0].schedule
     halo_exchange = schedule.children[0]
     field = halo_exchange.field
-    monkeypatch.setattr(field, "forward_read_dependencies", lambda: [])
+    monkeypatch.setattr(field, "forward_read_dependencies", lambda fs=None: [])
     with pytest.raises(GenerationError) as excinfo:
-        halo_exchange._compute_halo_read_info()
+        halo_exchange._compute_halo_info
     assert ("Internal logic error. There should be at least one read "
             "dependence for a halo exchange") in str(excinfo.value)
 
 
-def test_halo_exch_1_back_dep(monkeypatch):  # pylint: disable=invalid-name
+def test_halo_exchange_one_backward_dependence(monkeypatch):
     '''Check that an internal error is raised if a halo exchange returns
     with more than one write dependency. It should only ever be 0 or 1.'''
     _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
@@ -6666,19 +7026,23 @@ def test_halo_exch_1_back_dep(monkeypatch):  # pylint: disable=invalid-name
     field = halo_exchange.field
     #
     monkeypatch.setattr(field, "backward_write_dependencies",
-                        lambda ignore_halos=False: [1, 1])
+                        lambda fs=None: [1,1])
     with pytest.raises(GenerationError) as excinfo:
-        halo_exchange._compute_halo_write_info()
-    assert ("Internal logic error. There should be at most one "
+        halo_exchange._compute_halo_cleaned_info
+    assert ("Internal logic error. There should be one and only one "
             "write dependence for a halo exchange. Found "
             "'2'") in str(excinfo.value)
     #
     monkeypatch.setattr(field, "backward_write_dependencies",
-                        lambda ignore_halos=False: [])
-    assert not halo_exchange._compute_halo_write_info()
+                        lambda fs=None: [])
+    with pytest.raises(GenerationError) as excinfo:
+        halo_exchange._compute_halo_cleaned_info
+    assert ("Internal logic error. There should be one and only one "
+            "write dependence for a halo exchange. Found "
+            "'0'") in str(excinfo.value)
 
 
-def test_halo_ex_back_dep_no_call(monkeypatch):  # pylint: disable=invalid-name
+def test_halo_exchange_backward_dependence_no_call(monkeypatch):
     '''Check that an internal error is raised if a halo exchange
     write dependency is not a call.'''
     _, invoke_info = parse(os.path.join(BASE_PATH,
@@ -6690,76 +7054,39 @@ def test_halo_ex_back_dep_no_call(monkeypatch):  # pylint: disable=invalid-name
     field = halo_exchange.field
     write_dependencies = field.backward_write_dependencies()
     write_dependency = write_dependencies[0]
-    monkeypatch.setattr(write_dependency, "_call",
-                        lambda: halo_exchange)
+    monkeypatch.setattr(write_dependency, "call",
+                        lambda fs=None: halo_exchange)
     with pytest.raises(GenerationError) as excinfo:
-        halo_exchange._compute_halo_write_info()
-    # Note, we would expect the call type returned from HaloInfo to be
-    # DynHaloExchange as that is the type of the halo_exchange
-    # variable but lambda seems to result in the returning object
-    # being of type 'function'. I'm not sure why. However, this does
-    # not matter in practice as we are just trying to get PSyclone to
-    # raise the appropriate exception.
-    assert ("Generation Error: In HaloInfo class, field 'f2' should be from a "
+        halo_exchange._compute_halo_cleaned_info
+    assert ("internal error: write dependence for f2 should be from a "
             "call but found <type 'function'>") in str(excinfo.value)
 
 
-def test_HaloReadAccess_input_field():  # pylint: disable=invalid-name
-    '''The HaloReadAccess class expects a DynKernelArgument or equivalent
-    object as input. If this is not the case an exception is raised. This
-    test checks that this exception is raised correctly.'''
-    with pytest.raises(GenerationError) as excinfo:
-        _ = HaloReadAccess(None)
-    assert (
-        "Generation Error: HaloInfo class expects an argument of type "
-        "DynArgument, or equivalent, on initialisation, but found, "
-        "'<type 'NoneType'>'" in str(excinfo.value))
-
-
-def test_HaloReadAccess_field_in_call():  # pylint: disable=invalid-name
-    '''The field passed to HaloReadAccess should be within a kernel or
-    builtin. If it is not then an exception is raised. This test
-    checks that this exception is raised correctly'''
+def test_halo_exchange_invalid_read_dependence(monkeypatch):
+    '''All halo read dependencies should be kernels or builtins. If one
+    is not then _compute_single_halo_info raises an exception. This test
+    checks that this exception is raised correctly '''
     _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
                            api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     schedule = psy.invokes.invoke_list[0].schedule
     halo_exchange = schedule.children[0]
     field = halo_exchange.field
+    read_dependencies = field.forward_read_dependencies()
+    read_dependency = read_dependencies[0]
+    monkeypatch.setattr(read_dependency, "call",
+                        lambda fs=None: halo_exchange)    
     with pytest.raises(GenerationError) as excinfo:
-        _ = HaloReadAccess(field)
-    assert ("field 'f2' should be from a call but found "
-            "<class 'psyclone.dynamo0p3.DynHaloExchange'>"
-            in str(excinfo.value))
+        halo_exchange._compute_single_halo_info(read_dependency)
+    assert ("internal error: read dependence for f2 should be from a call "
+            "but found <type 'function'>") in str(excinfo.value)
 
 
-def test_HaloReadAccess_field_not_reader():  # pylint: disable=invalid-name
-    '''The field passed to HaloReadAccess should be read within its associated
-    kernel or builtin. If it is not then an exception is raised. This
-    test checks that this exception is raised correctly
-
-    '''
-    _, invoke_info = parse(os.path.join(BASE_PATH,
-                                        "1_single_invoke_w3_only.f90"),
-                           api="dynamo0.3")
-    psy = PSyFactory("dynamo0.3").create(invoke_info)
-    schedule = psy.invokes.invoke_list[0].schedule
-    loop = schedule.children[0]
-    kernel = loop.children[0]
-    argument = kernel.arguments.args[0]
-    with pytest.raises(GenerationError) as excinfo:
-        _ = HaloReadAccess(argument)
-    assert (
-        "In HaloInfo class, field 'f1' should be one of ['gh_read', "
-        "'gh_inc'], but found 'gh_write'" in str(excinfo.value))
-
-
-def test_HaloRead_inv_loop_upper(monkeypatch):  # pylint: disable=invalid-name
-    '''The upper bound of a loop in the compute_halo_read_info method within
-    the HaloReadAccesss class should be recognised by the logic. If not an
-    exception is raised and this test checks that this exception is
-    raised correctly
-    '''
+def test_halo_exchange_invalid_loop_upper_bound(monkeypatch):
+    '''All halo read dependencies should be kernels or builtins and their
+    upper bound should be recognised by the _compute_single_halo_info
+    logic. If not an exception is raised and this test checks that
+    this exception is raised correctly'''
     _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
                            api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(invoke_info)
@@ -6771,52 +7098,58 @@ def test_HaloRead_inv_loop_upper(monkeypatch):  # pylint: disable=invalid-name
     loop = read_dependency.call.parent
     monkeypatch.setattr(loop, "_upper_bound_name", "invalid")
     with pytest.raises(GenerationError) as excinfo:
-        halo_exchange._compute_halo_read_info()
-    assert ("Internal error in HaloReadAccess._compute_from_field. Found "
-            "unexpected loop upper bound name 'invalid'") in str(excinfo.value)
+        halo_exchange._compute_single_halo_info(read_dependency)
+    assert ("Internal error in _compute_single_halo_info. Found loop "
+            "upper bound name 'invalid'") in str(excinfo.value)
 
 
-def test_HaloReadAccess_discontinuous_field():  # pylint: disable=invalid-name
-    '''When a discontinuous argument is read in a loop with an iteration
-    space over 'ncells' then it only accesses local dofs. This test
-    checks that HaloReadAccess works correctly in this situation'''
-    _, info = parse(os.path.join(BASE_PATH,
-                                 "1_single_invoke_w3_only.f90"),
-                    api="dynamo0.3")
-    psy = PSyFactory("dynamo0.3").create(info)
-    schedule = psy.invokes.invoke_list[0].schedule
-    loop = schedule.children[0]
-    kernel = loop.children[0]
-    arg = kernel.arguments.args[1]
-    halo_access = HaloReadAccess(arg)
-    assert not halo_access.max_depth
-    assert halo_access.var_depth is None
-    assert halo_access.literal_depth == 0
-    assert halo_access.stencil_type is None
-
-
-def test_loop_cont_read_inv_bound(monkeypatch):  # pylint: disable=invalid-name
-    '''When a continuous argument is read it may access the halo. The
-    logic for this is in _halo_read_access. If the loop type in this
-    routine is not known then an exception is raised. This test checks
-    that this exception is raised correctly'''
+def test_loop_annexed_dofs_multi_write(monkeypatch):
+    '''When a continuous argument is read in a discontinuous loop it
+    accesses any annexed dofs. We then check any previous write
+    dependences. There should be at most one of these. If there are more
+    than one then we raise an exception in _halo_read_access. This test
+    checks that this exception is raised correctly'''    
     _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke_w3.f90"),
                            api="dynamo0.3")
     psy = PSyFactory("dynamo0.3").create(invoke_info)
     schedule = psy.invokes.invoke_list[0].schedule
-    loop = schedule.children[3]
+    loop  = schedule.children[3]
+    kernel = loop.children[0]
+    f1_arg = kernel.arguments.args[1]
+    #
+    # the test is for the length of the list returned so it does not
+    # matter what is actually in the list to raise the exception
+    monkeypatch.setattr(f1_arg, "backward_write_dependencies",
+                        lambda ignore_halos: [1, 1])
+    with pytest.raises(GenerationError) as excinfo:
+        result = loop._halo_read_access(f1_arg)
+    assert ("Internal error in _halo_read_access, kernel 'testkern_code' "
+            "arg 'f1'. We should only return at most one write "
+            "dependence") in str(excinfo.value)
+
+
+def test_loop_continuous_read_invalid_bound(monkeypatch):
+    '''When a continuous argument is read it may access the halo. The
+    logic for this is in _halo_read_access. If the loop type in this
+    routine is not known then an exception is raised. This test checks
+    that this exception is raised correctly'''    
+    _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke_w3.f90"),
+                           api="dynamo0.3")
+    psy = PSyFactory("dynamo0.3").create(invoke_info)
+    schedule = psy.invokes.invoke_list[0].schedule
+    loop  = schedule.children[3]
     kernel = loop.children[0]
     f1_arg = kernel.arguments.args[1]
     #
     monkeypatch.setattr(loop, "_upper_bound_name", "invalid")
     with pytest.raises(GenerationError) as excinfo:
-        _ = loop._halo_read_access(f1_arg)
+        result = loop._halo_read_access(f1_arg)
     assert ("Internal error in _halo_read_access. It should not be "
             "possible to get to here. loop upper bound name is 'invalid' "
             "and arg 'f1' access is 'gh_read'.") in str(excinfo.value)
 
 
-def test_new_halo_exch_vect_field(monkeypatch):  # pylint: disable=invalid-name
+def test_create_halo_exchanges_vector_field(monkeypatch):
     '''if a field requires (or may require) a halo exchange before it is
     called and it has more than one backward write dependencies then it
     must be a vector (as a vector field requiring a halo exchange should
@@ -6836,7 +7169,7 @@ def test_new_halo_exch_vect_field(monkeypatch):  # pylint: disable=invalid-name
     # backward_write_dependencies. Therefore also patch this function
     # to return 3 arguments
     monkeypatch.setattr(f1_field, "backward_write_dependencies",
-                        lambda ignore_halos=False: [1, 1, 1])
+                        lambda fs=None: [1, 1, 1])
     monkeypatch.setattr(f1_field, "_vector_size", 1)
     with pytest.raises(GenerationError) as excinfo:
         loop.create_halo_exchanges()
@@ -6845,7 +7178,7 @@ def test_new_halo_exch_vect_field(monkeypatch):  # pylint: disable=invalid-name
             in str(excinfo.value))
 
 
-def test_new_halo_exch_vect_deps(monkeypatch):  # pylint: disable=invalid-name
+def test_create_halo_exchanges_vector_dependencies(monkeypatch):
     '''if a field requires (or may require) a halo exchange before it is
     called and it has more than one backward write dependencies then
     it must be a vector (as a vector field requiring a halo exchange
@@ -6866,7 +7199,7 @@ def test_new_halo_exch_vect_deps(monkeypatch):  # pylint: disable=invalid-name
     # backward_write_dependencies. Therefore also patch this function
     # to return 3 arguments
     monkeypatch.setattr(f1_field, "backward_write_dependencies",
-                        lambda ignore_halos=False: [1, 1, 1])
+                        lambda fs=None: [1, 1, 1])
     monkeypatch.setattr(f1_field, "_vector_size", 2)
     with pytest.raises(GenerationError) as excinfo:
         loop.create_halo_exchanges()
@@ -6876,11 +7209,11 @@ def test_new_halo_exch_vect_deps(monkeypatch):  # pylint: disable=invalid-name
         "and the vector size is '3'." in str(excinfo.value))
 
 
-def test_new_halo_exch_vect_deps2(monkeypatch):  # pylint: disable=invalid-name
+def test_create_halo_exchanges_vector_dependencies(monkeypatch):
     '''if a field requires (or may require) a halo exchange before it is
     called and it has more than one backward write dependencies then
     it must be a vector (as a vector field requiring a halo exchange
-    should have a halo exchange for each component) and each dependency
+    should have a halo exchange for each vector) and each dependency
     should be a halo exchange. The method create_halo_exchanges raises
     an exception if this is not the case. This test checks that the
     exception is raised correctly.'''
@@ -6899,55 +7232,9 @@ def test_new_halo_exch_vect_deps2(monkeypatch):  # pylint: disable=invalid-name
     # make one of the dependencies be me (an argument from a kernel)
     new_dependencies[2] = f1_field
     monkeypatch.setattr(f1_field, "backward_write_dependencies",
-                        lambda ignore_halos=False: new_dependencies)
+                        lambda fs=None: new_dependencies)
     with pytest.raises(GenerationError) as excinfo:
         loop.create_halo_exchanges()
     assert (
         "Error in create_halo_exchanges. Expecting all dependent nodes to be "
-        "halo exchanges" in str(excinfo.value))
-
-
-def test_halo_req_no_read_deps(monkeypatch):  # pylint: disable=invalid-name
-    '''If the required method in a halo exchange object does not find any
-    read dependencies then there has been an internal error and an
-    exception will be raised. This test checks that this exception is
-    raised correctly.'''
-
-    _, invoke_info = parse(os.path.join(BASE_PATH, "1_single_invoke.f90"),
-                           api="dynamo0.3")
-    psy = PSyFactory("dynamo0.3").create(invoke_info)
-    schedule = psy.invokes.invoke_list[0].schedule
-    halo_exchange = schedule.children[0]
-    field = halo_exchange.field
-
-    monkeypatch.setattr(field, "_name", "unique")
-
-    with pytest.raises(GenerationError) as excinfo:
-        _, _ = halo_exchange.required()
-    assert ("Internal logic error. There should be at least one read "
-            "dependence for a halo exchange" in str(excinfo.value))
-
-
-def test_no_halo_exchange_annex_dofs(  # pylint: disable=invalid-name
-        tmpdir, f90, f90flags):
-    '''If a kernel writes to a discontinuous field and also reads from a
-    continuous field then that fields annexed dofs are read (but not
-    the rest of its level1 halo). If the previous modification of this
-    continuous field makes the annexed dofs valid then no halo
-    exchange is required. This is the case when the previous loop
-    iterates over cells as it computes into the l1 halo by default
-    precisely in order to ensure that the annexed dofs are correct for
-    subsequent reading (whilst the rest of the l1 halo ends up being
-    dirty).
-
-    '''
-    _, invoke_info = parse(os.path.join(BASE_PATH, "14.7.1_halo_annexed.f90"),
-                           api="dynamo0.3")
-    psy = PSyFactory("dynamo0.3").create(invoke_info)
-    result = str(psy.gen)
-    print result
-    if utils.TEST_COMPILE:
-        # If compilation testing has been enabled (--compile flag to py.test)
-        assert utils.code_compiles("dynamo0.3", psy, tmpdir, f90, f90flags)
-    assert "CALL f1_proxy%halo_exchange" in result
-    assert "CALL f2_proxy%halo_exchange" not in result
+        "halo exchanges")

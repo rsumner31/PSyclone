@@ -33,17 +33,9 @@ objects and their use are discussed in the following sections.
 
 ::
 
-  real(kind=r_def)      	 :: scalar1
-  integer(kind=i_def)   	 :: stencil_extent
-  type(field_type)      	 :: field1, field2, field3
-  type(quadrature_type) 	 :: qr
-  type(operator_type)   	 :: operator1
-  type(columnwise_operator_type) :: cma_op1
-  ...
   call invoke( kernel1(field1, field2, operator1, qr),           &
                builtin1(scalar1, field2, field3),                &
                kernel2(field1, stencil_extent, field3, scalar1), &
-	       assembly_kernel(cma_op1, operator1),              &
                name="some calculation"                           &
              )
 
@@ -118,29 +110,10 @@ meta-data (see :ref:`cma_meta_data_rules` below). The names of the
 kernels in the above example are purely illustrative and are not used
 by PSyclone when determining kernel type.
 
-.. _quadrature:
+Quadrature rule
++++++++++++++++
 
-Quadrature
-++++++++++
-
-Kernels conforming to the Dynamo 0.3 API may require quadrature
-information (specified using e.g. ``gh_shape = gh_quadrature_XYoZ`` in
-the kernel meta-data - see Section :ref:`gh-shape`). This information
-must be passed to the kernel from the Algorithm layer in the form of a
-`quadrature_type` object. This must be the last argument passed to the
-kernel, e.g.:
-
-::
-
-      type( quadrature_type )   :: qr
-      ...
-      qr = quadrature_type(element_order+2, GAUSSIAN)
-      call invoke(pressure_gradient_kernel_type(rhs_tmp(igh_u), rho, theta, qr),   &
-                  kinetic_energy_gradient_kernel_type(rhs_tmp(igh_u), u, chi, qr), &
-                  geopotential_gradient_kernel_type(rhs_tmp(igh_u), geopotential, qr))
-
-This quadrature object specifies the set of points at which the 
-basis/differential-basis functions required by the kernel are to be evaluated.
+.. note:: To be written.
 
 .. _dynamo0.3-alg-stencil:
 
@@ -215,7 +188,7 @@ In the above example ``field2`` and ``field3`` in ``kernel1`` and
 ``field3`` in ``kernel1`` and ``field4`` in ``kernel2`` will have the
 same ``direction`` value.
 
-An example of the use of stencils is available in ``examples/dynamo/eg5``.
+An example of the use of stencils is available in ``examples/dynamo0p3/eg5``.
 
 There is currently no attempt to perform type checking in PSyclone so
 any errors in the type and/or position of arguments will not be picked
@@ -255,12 +228,11 @@ Kernel
 -------
 
 The general requirements for the structure of a Kernel are explained
-in the :ref:`kernel-layer` section. In the Dynamo API there are four
-different Kernel types; general purpose, CMA, inter-grid and
-:ref:`dynamo_built-ins`. For the latter type, PSyclone generates the
-source of the kernels.  This section explains the rules for the other
-three, user-supplied kernel types and then goes on to describe their
-metadata and subroutine arguments.
+in the :ref:`kernel-layer` section. In the Dynamo API there are three
+different Kernel types; general purpose (user-supplied), CMA
+(user-supplied) and :ref:`dynamo_built-ins`. This section explains the
+rules for the two user-supplied kernel types and then goes on to
+describe their metadata and subroutine arguments.
 
 Rules for all User-Supplied Kernels
 +++++++++++++++++++++++++++++++++++
@@ -290,7 +262,7 @@ types.
 
  4) Operators do not have halo operations operating on them as they
     are either cell- (LMA) or column-based (CMA) and therefore act
-    like discontinuous fields.
+    like discontinous fields.
 
  5) Any Kernel that writes to an operator will have its iteration
     space expanded such that valid values for the operator are
@@ -339,7 +311,7 @@ All three CMA-related kernel types must obey the following rules:
      permitted as arguments.
 
 There are then additional rules specific to each of the three
-CMA kernel types. These are described below.
+kernel types. These are described below.
 
 Assembly
 ########
@@ -379,24 +351,6 @@ operation. In this case:
 
 2) Exactly one of the CMA arguments must be written to while all other
    arguments must be read-only.
-
-Rules for Inter-Grid Kernels
-++++++++++++++++++++++++++++
-
-1) An inter-grid kernel is identified by the presence of a field argument with
-   the optional `mesh_arg` meta-data element (see
-   :ref:`dynamo0.3-intergrid-mdata`).
-
-2) An inter-grid kernel is only permitted to have field or field-vector
-   arguments.
-
-3) All inter-grid kernel arguments must have the `mesh_arg` meta-data entry.
-
-4) An inter-grid kernel (and metadata) must have at least one field on
-   each of the fine and coarse meshes. Specifying all fields as coarse or
-   fine is forbidden.
-
-5) Fields on different meshes must always live on different function spaces.
 
 Metadata
 ++++++++
@@ -644,24 +598,15 @@ checks (when generating the PSy layer) that any kernels which read
 operator values do not do so beyond the level-1 halo. If any such
 accesses are found then PSyclone aborts.
 
-Optional Field Metadata
-^^^^^^^^^^^^^^^^^^^^^^^
-
-A field entry in the meta_args array may have an optional fourth element.
-This element describes either a stencil access or, for inter-grid kernels,
-which mesh the field is on. Since an inter-grid kernel is not permitted
-to have stencil accesses, these two options are mutually exclusive.
-The meta-data for each case is described in the following sections.
-
 Stencil Metadata
-________________
+^^^^^^^^^^^^^^^^
 
-
-Stencil metadata specifies that the corresponding field argument is accessed
-as a stencil operation within the Kernel.  Stencil metadata only makes sense
-if the associated field is read within a Kernel i.e. it only makes
-sense to specify stencil metadata if the first entry is ``GH_FIELD``
-and the second entry is ``GH_READ``.
+Field metadata supports an optional 4th argument which specifies that
+the field is accessed as a stencil operation within the
+Kernel. Stencil metadata only makes sense if the associated field is
+read within a Kernel i.e. it only makes sense to specify stencil
+metadata if the first entry is ``GH_FIELD`` and the second entry is
+``GH_READ``.
 
 Stencil metadata is written in the following format:
 
@@ -724,43 +669,7 @@ Below is an example of stencil information within the full kernel metadata.
        /)
 
 There is a full example of this distributed with PSyclone. It may
-be found in ``examples/dynamo/eg5``.
-
-.. _dynamo0.3-intergrid-mdata:
-
-Inter-Grid Metadata
-___________________
-
-
-The alternative form of the optional fourth metadata argument for a
-field specifies which mesh the associated field is on.  This is
-required for inter-grid kernels which perform prolongation or
-restriction operations on fields (or field vectors) existing on grids
-of different resolutions.
-
-Mesh metadata is written in the following format:
-
-::
-
-  mesh_arg=type
-
-where ``type`` may be one of ``GH_COARSE`` or ``GH_FINE``. Any kernel
-having a field argument with this meta-data is assumed to be an
-inter-grid kernel and, as such, all of its other arguments (which
-must also be fields) must have it specified too. An example of the
-metadata for such a kernel is give below:
-
-::
-
-  type(arg_type) :: meta_args(2) = (/                               &
-      arg_type(GH_FIELD, GH_INC,  ANY_SPACE_1, mesh_arg=GH_COARSE), &
-      arg_type(GH_FIELD, GH_READ, ANY_SPACE_2, mesh_arg=GH_FINE  )  &
-      /)
-
-Note that an inter-grid kernel must have at least one field (or field-
-vector) argument on each mesh type and that fields that are on different
-meshes cannot be on the same function space.
-
+be found in ``examples/dynamo0p3/eg5``.
 
 Column-wise Operators (CMA)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -839,8 +748,6 @@ spaces associated with the arguments listed in ``meta_args``.  In this
 case we require both for the W0 function space but only basis
 functions for W1.
 
-.. _gh-shape:
-
 gh_shape
 ########
 
@@ -849,14 +756,7 @@ meta-data must also specify the set of points on which these functions
 are required. This information is provided by the ``gh_shape``
 component of the meta-data.  Currently PSyclone supports two shapes;
 ``gh_quadrature_XYoZ`` for Gaussian quadrature points and
-``gh_evaluator`` for evaluation at nodal points. For the latter,
-the values of the basis/differential-basis functions are computed at
-the nodes defined by the function space of the quantity that the
-associated kernel is updating. All necessary data is extracted in the
-PSy layer and passed to the kernel(s) as required - nothing is
-required from the Algorithm layer. If a kernel requires quadrature on
-the other hand, the Algorithm writer must supply a ``quadrature_type``
-object as the last argument to the kernel (see Section :ref:`quadrature`).
+``gh_evaluator`` for evaluation at nodal points.
 
 Note that it is an error for kernel meta-data to specify a value for
 ``gh_shape`` if no basis or differential-basis functions are
@@ -1678,13 +1578,12 @@ Transformations
 ---------------
 
 This section describes the dynamo-api-specific transformations. In all
-cases, excepting **Dynamo0p3RedundantComputationTrans**, these
-transformations are specialisations of generic transformations
-described in the :ref:`transformations` section. The difference
-between these transformations and the generic ones is that these
-perform dynamo-api-specific checks to make sure the transformations
-are valid. In practice these transformations perform the required
-checks then call the generic ones internally.
+cases these transformations are specialisations of generic
+transformations described in the :ref:`transformations` section. The
+difference between these transformations and the generic ones are that
+these perform dynamo-api-specific checks to make sure the
+transformations are valid. In practice these transformations perform
+the required checks then call the generic ones internally.
 
 The use of the dynamo-api-specific transformations is exactly the same
 as the equivalent generic ones in all cases excepting
@@ -1699,11 +1598,6 @@ allow loop fusion if it does not know the spaces are the same. The
 the spaces are the same. This option should therefore be used with
 caution. Note, if PSyclone knows the spaces are different this option
 has no effect and the transformation will always raise an exception.
-
-The **Dynamo0p3RedundantComputationTrans** transformation is only valid
-for the "Dynamo0p3" API. This is because this API is currently the
-only one that supports distributed memory.
-An example of redundant computation can be found in ``examples/dynamo/eg8``.
 
 The Dynamo-specific transformations currently available are given
 below. If the name of a transformation includes "Dynamo0p3" it means
@@ -1724,9 +1618,5 @@ all versions of the Dynamo API.
     :noindex:
 
 .. autoclass:: psyclone.transformations.Dynamo0p3ColourTrans
-    :members:
-    :noindex:
-
-.. autoclass:: psyclone.transformations.Dynamo0p3RedundantComputationTrans
     :members:
     :noindex:

@@ -13,7 +13,7 @@
 # * Redistributions in binary form must reproduce the above copyright notice,
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-#
+
 # * Neither the name of the copyright holder nor the names of its
 #   contributors may be used to endorse or promote products derived from
 #   this software without specific prior written permission.
@@ -31,28 +31,46 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
-# Authors: A. Porter and R. Ford, STFC Daresbury Lab
+# Author A. R. Porter, STFC Daresbury Lab
 
-''' Module containing configuration required to build code generated
-for the Dynamo0p3 API '''
+''' Tests for the install/set-up related functionality of
+PSyclone '''
 
 import os
 
-# constants
-BASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         "test_files", "dynamo0p3")
-# Stub infrastructure modules that allow us to compile the generated
-# PSy code.  These must be listed in the order in which they must
-# be compiled.
-INFRASTRUCTURE_PATH = os.path.join(BASE_PATH, "infrastructure")
-INFRASTRUCTURE_MODULES = ["constants_mod",
-                          "linked_list_data_mod",
-                          "argument_mod",
-                          "kernel_mod",
-                          "partition_mod",
-                          "mesh_mod",
-                          "stencil_dofmap_mod",
-                          "function_space_mod",
-                          "field_mod",
-                          "quadrature_mod",
-                          "operator_mod"]
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+
+
+def test_vn_generation(monkeypatch, tmpdir):
+    ''' Check that running setup.py generates the expected Python
+    module file containing the current version of PSyclone '''
+    import sys
+    sys_path = sys.path
+    # BASE_PATH points to some_path/PSyclone/src/psyclone/tests and we
+    # need some_path/PSyclone
+    tail = ""
+    head = BASE_PATH
+    while tail != "src":
+        head, tail = os.path.split(head)
+    # Monkeypatch sys.path so that it includes the locations of setup.py
+    # and our scratch directory
+    monkeypatch.setattr(sys, "path", value=sys_path + [head, str(tmpdir)])
+    # Now import the setup module and call the write_version_py() routine
+    # to generate a new module containing the version number.
+    import setup
+    fname = os.path.join(str(tmpdir), "tmp_version.py")
+    setup.write_version_py(filename=fname)
+    # Check that the resulting module contains what we expect
+    assert os.path.isfile(fname)
+    import tmp_version
+    assert tmp_version.version == setup.VERSION
+    assert tmp_version.short_version == setup.SHORT_VERSION
+    # Again but using the default filename. We monkeypatch setup.__file__ to
+    # be a file in our scratch directory so that the resulting
+    # version.py is written in our scratch space.
+    monkeypatch.setattr(setup, "__file__", fname)
+    tmpdir.mkdir("src")
+    tmpdir.mkdir(os.path.join("src", "psyclone"))
+    setup.write_version_py()
+    assert os.path.isfile(os.path.join(str(tmpdir),
+                                       "src", "psyclone", "version.py"))

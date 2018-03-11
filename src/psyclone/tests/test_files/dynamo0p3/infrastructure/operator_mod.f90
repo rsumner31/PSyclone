@@ -36,55 +36,21 @@
 ! Author R. Ford and A. R. Porter, STFC Daresbury Lab
 
 module operator_mod
-  use constants_mod,            only : r_def
-  use function_space_mod,       only : function_space_type
-  use mesh_mod
 
-  type, public :: base_operator_type
-     integer :: a
-     type( function_space_type ), pointer         :: fs_from => null( )
-     type( function_space_type ), pointer         :: fs_to => null( )
-   contains
-     procedure, public :: get_mesh
-  end type base_operator_type
+type operator_type
+   integer :: a
+end type operator_type
 
-  type, extends(base_operator_type) :: operator_type
-     real(kind=r_def), allocatable         :: local_stencil( :, :, : )
-     integer :: ncell_3d
-   contains
-     procedure, public :: get_proxy => get_proxy_op
-  end type operator_type
+type operator_proxy_type
+   integer :: b
+end type operator_proxy_type
 
-  type, extends(base_operator_type) :: operator_proxy_type
-     real(kind=r_def), allocatable         :: local_stencil( :, :, : )
-     integer :: ncell_3d
-  end type operator_proxy_type
+type columnwise_operator_type
+   integer :: c
+end type columnwise_operator_type
 
-  type, extends(base_operator_type) ::  columnwise_operator_type
-     integer :: c
-  end type columnwise_operator_type
-
-  type, extends(base_operator_type) ::  columnwise_operator_proxy_type
-     integer :: d
-  end type columnwise_operator_proxy_type
-
-contains
-
-  type(operator_proxy_type ) function get_proxy_op(self)
-    implicit none
-    class(operator_type), target, intent(in)  :: self
-
-    get_proxy_op % fs_from                 => null()
-    get_proxy_op % fs_to                   => null()
-  end function get_proxy_op
-
-  
-  function get_mesh(self) result(mesh)
-
-    implicit none
-    class (base_operator_type), intent(in) :: self
-    type(mesh_type), pointer :: mesh
-    mesh => null()
-  end function get_mesh
+type columnwise_operator_proxy_type
+   integer :: d
+end type columnwise_operator_proxy_type
 
 end module operator_mod
