@@ -215,7 +215,7 @@ In the above example ``field2`` and ``field3`` in ``kernel1`` and
 ``field3`` in ``kernel1`` and ``field4`` in ``kernel2`` will have the
 same ``direction`` value.
 
-An example of the use of stencils is available in ``examples/dynamo0p3/eg5``.
+An example of the use of stencils is available in ``examples/dynamo/eg5``.
 
 There is currently no attempt to perform type checking in PSyclone so
 any errors in the type and/or position of arguments will not be picked
@@ -724,7 +724,7 @@ Below is an example of stencil information within the full kernel metadata.
        /)
 
 There is a full example of this distributed with PSyclone. It may
-be found in ``examples/dynamo0p3/eg5``.
+be found in ``examples/dynamo/eg5``.
 
 .. _dynamo0.3-intergrid-mdata:
 
@@ -1703,6 +1703,7 @@ has no effect and the transformation will always raise an exception.
 The **Dynamo0p3RedundantComputationTrans** transformation is only valid
 for the "Dynamo0p3" API. This is because this API is currently the
 only one that supports distributed memory.
+An example of redundant computation can be found in ``examples/dynamo/eg8``.
 
 The Dynamo-specific transformations currently available are given
 below. If the name of a transformation includes "Dynamo0p3" it means
