@@ -1,8 +1,7 @@
 ! -----------------------------------------------------------------------------
 ! BSD 3-Clause License
 !
-! Copyright (c) 2017-2018, Science and Technology Facilities Council
-! All rights reserved.
+! Copyright (c) 2017, Science and Technology Facilities Council
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -32,28 +31,19 @@
 ! POSSIBILITY OF SUCH DAMAGE.
 ! -----------------------------------------------------------------------------
 ! Authors R. Ford and A. R. Porter, STFC Daresbury Lab
-! Modified I. Kavcic Met Office
 
-program single_invokes_cma_discontinuous
+module testkern_w3_only
+  type, extends(kernel_type) :: testkern_w3_only_type
+     type(arg_type), dimension(2) :: meta_args =  (/  &
+             arg_type(gh_field,gh_write,w3), &
+             arg_type(gh_field,gh_read, w3)  &
+           /)
+     integer, parameter :: iterates_over = cells
+   contains
+     procedure() :: code => testkern_code
+  end type testkern_w3_only_type
+contains
 
-  ! Description: two single invokes containing multiple CMA-related kernels
-  ! on discontinuous spaces W3 and W2V
-
-  use inf,                              only: field_type
-  use columnwise_op_app_w3_kernel_mod,  only: &
-                            columnwise_op_app_w3_kernel_type
-  use columnwise_op_app_w2v_kernel_mod, only: &
-                            columnwise_op_app_w2v_kernel_type
-
-  implicit none
-
-  type(field_type)               :: field_a, field_b
-  type(field_type)               :: field_c, field_d
-  type(columnwise_operator_type) :: cma_op1, cma_op2
-
-  call invoke( &
-         columnwise_op_app_w3_kernel_type(field_a, field_b, cma_op1) )
-  call invoke( &
-         columnwise_op_app_w2v_kernel_type(field_c, field_d, cma_op2) )
-
-end program single_invokes_cma_discontinuous
+  subroutine testkern_code()
+  end subroutine testkern_code
+end module testkern_w3_only

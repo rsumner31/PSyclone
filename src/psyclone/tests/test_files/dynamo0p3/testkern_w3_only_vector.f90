@@ -1,8 +1,7 @@
 ! -----------------------------------------------------------------------------
 ! BSD 3-Clause License
 !
-! Copyright (c) 2017-2018, Science and Technology Facilities Council
-! All rights reserved.
+! Copyright (c) 2017, Science and Technology Facilities Council
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -32,51 +31,19 @@
 ! POSSIBILITY OF SUCH DAMAGE.
 ! -----------------------------------------------------------------------------
 ! Authors R. W. Ford and A. R. Porter, STFC Daresbury Lab
-! Modified I. Kavcic Met Office
 
-module testkern_w3_only_vector_mod
-
-  use argument_mod
-  use kernel_mod
-  use constants_mod
-
-  implicit none
-
-  ! Description: discontinuous field vector writer and reader (w3)
+module testkern_w3_only_vector
   type, extends(kernel_type) :: testkern_w3_only_vector_type
-     type(arg_type), dimension(2) :: meta_args =  &
-          (/  arg_type(gh_field*3, gh_write, w3), &
-              arg_type(gh_field*3, gh_read,  w3)  &
+     type(arg_type), dimension(2) :: meta_args =  (/  &
+             arg_type(gh_field*3,gh_write,w3), &
+             arg_type(gh_field*3,gh_read, w3)  &
            /)
-     integer :: iterates_over = cells
+     integer, parameter :: iterates_over = cells
    contains
-     procedure, nopass :: code => testkern_w3_only_vector_code
+     procedure() :: code => testkern_code
   end type testkern_w3_only_vector_type
-
 contains
 
-  SUBROUTINE testkern_w3_only_vector_code(nlayers,       &
-                                          field_1_w3_v1, &
-                                          field_1_w3_v2, &
-                                          field_1_w3_v3, &
-                                          field_2_w3_v1, &
-                                          field_2_w3_v2, &
-                                          field_2_w3_v3, &
-                                          ndf_w3, undf_w3, map_w3)
-
-    IMPLICIT NONE
-
-    INTEGER, intent(in) :: nlayers
-    INTEGER, intent(in) :: ndf_w3
-    INTEGER, intent(in) :: undf_w3
-    INTEGER, intent(in), dimension(ndf_w3) :: map_w3
-    REAL(KIND=r_def), intent(out), dimension(undf_w3) :: field_1_w3_v1
-    REAL(KIND=r_def), intent(out), dimension(undf_w3) :: field_1_w3_v2
-    REAL(KIND=r_def), intent(out), dimension(undf_w3) :: field_1_w3_v3
-    REAL(KIND=r_def), intent(in), dimension(undf_w3) :: field_2_w3_v1
-    REAL(KIND=r_def), intent(in), dimension(undf_w3) :: field_2_w3_v2
-    REAL(KIND=r_def), intent(in), dimension(undf_w3) :: field_2_w3_v3
-
-  END SUBROUTINE testkern_w3_only_vector_code
-
-end module testkern_w3_only_vector_mod
+  subroutine testkern_code()
+  end subroutine testkern_code
+end module testkern_w3_only_vector

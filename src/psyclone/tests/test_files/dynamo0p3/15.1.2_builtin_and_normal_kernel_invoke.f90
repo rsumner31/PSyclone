@@ -1,8 +1,7 @@
 ! -----------------------------------------------------------------------------
 ! BSD 3-Clause License
 !
-! Copyright (c) 2017-2018, Science and Technology Facilities Council
-! All rights reserved.
+! Copyright (c) 2017, Science and Technology Facilities Council
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -30,17 +29,16 @@
 ! LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 ! ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ! POSSIBILITY OF SUCH DAMAGE.
-! -----------------------------------------------------------------------------
+
 ! Author R. W. Ford, STFC Daresbury Lab
-! Modified I. Kavcic Met Office
 
 program single_invoke_builtin_then_kernel
 
   ! Description: single invoke call with a builtin followed by a kernel call
-  use testkern,            only: testkern_type
-  use testkern_wtheta_mod, only: testkern_wtheta_type
-  use testkern_w2_only,    only: testkern_w2_only_type
-  use inf,                 only: field_type
+  use testkern, only: testkern_type
+  use testkern_w3_only, only: testkern_w3_only_type
+  use testkern_w2_only, only: testkern_w2_only_type
+  use inf,      only: field_type
   implicit none
   type(field_type) :: f1, f2, f3, f4
   real(r_def) :: scalar = 0.0
@@ -51,9 +49,9 @@ program single_invoke_builtin_then_kernel
        ! f3 function space w2, write
        ! f2 function space w2, read
        testkern_w2_only_type(f3, f2),        &
-       ! f4 function space wtheta, write
+       ! f4 function space w3, write
        ! f5 function space w3, read
-       testkern_wtheta_type(f4, f5),         &
+       testkern_w3_only_type(f4, f5),        &
        ! scalar, read
        ! f1 function space w1, write
        ! f2 function space w2, read
@@ -62,4 +60,4 @@ program single_invoke_builtin_then_kernel
        testkern_type(scalar, f1, f2, f3, f4) &
           )
 
-end program single_invoke_builtin_then_kernel
+end program single_invoke

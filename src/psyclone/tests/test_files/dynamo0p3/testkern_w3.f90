@@ -2,7 +2,6 @@
 ! BSD 3-Clause License
 !
 ! Copyright (c) 2017, Science and Technology Facilities Council
-! All rights reserved.
 !
 ! Redistribution and use in source and binary forms, with or without
 ! modification, are permitted provided that the following conditions are met:
@@ -31,18 +30,33 @@
 ! ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ! POSSIBILITY OF SUCH DAMAGE.
 ! -----------------------------------------------------------------------------
-! Author I. Kavcic Met Office
+! Authors R. W. Ford and A. R. Porter, STFC Daresbury Lab
 
-program single_invoke
+module testkern_w3
+  use argument_mod
+  use kernel_mod
+  use constants_mod
+  type, extends(kernel_type) :: testkern_w3_type
+     type(arg_type), dimension(5) :: meta_args =    &
+          (/ arg_type(gh_real, gh_read),     &
+             arg_type(gh_field,gh_read,w1), &
+             arg_type(gh_field,gh_read, w2), &
+             arg_type(gh_field,gh_read, w2), &
+             arg_type(gh_field,gh_write, w3)  &
+           /)
+     integer :: iterates_over = cells
+   contains
+     procedure, nopass :: code => testkern_w3_code
+  end type testkern_w3_type
+contains
 
-  ! Description: single point-wise operation (raise field to an integer power)
-  ! specified in an invoke call
-  use testkern, only: testkern_type
-  use inf,      only: field_type
-  implicit none
-  type(field_type) :: f1
-  integer(i_def) :: i_scalar
-
-  call invoke( inc_X_powint_n(f1, i_scalar) )
-
-end program single_invoke
+  subroutine testkern_w3_code(nlayers, ascalar, fld1, fld2, fld3, fld4, &
+                           ndf_w1, undf_w1, map_w1, ndf_w2, undf_w2, map_w2, &
+                           ndf_w3, undf_w3, map_w3)
+    integer :: nlayers
+    real(kind=r_def) :: ascalar
+    real(kind=r_def), dimension(:) :: fld1, fld2, fld3, fld4
+    integer :: ndf_w1, undf_w1, ndf_w2, undf_w2, ndf_w3, undf_w3
+    integer, dimension(:) :: map_w1, map_w2, map_w3
+  end subroutine testkern_w3_code
+end module testkern_w3

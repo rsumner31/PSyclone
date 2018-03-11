@@ -45,12 +45,7 @@ module testkern_w0_mod
   end type testkern_w0_type
 contains
 
-  subroutine testkern_w0_code(nlayers, fld1, fld2, ndf_w0, undf_w0, map_w0)
-    integer :: nlayers
-    real(kind=r_def), dimension(:), intent(inout) :: fld1
-    real(kind=r_def), dimension(:), intent(in)    :: fld2
-    integer :: ndf_w0, undf_w0
-    integer, dimension(:) :: map_w0
+  subroutine testkern_w0_code()
   end subroutine testkern_w0_code
 
 end module testkern_w0_mod

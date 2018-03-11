@@ -36,7 +36,6 @@
 ''' Module containing configuration required to build code generated
 for the Dynamo0p3 API '''
 
-from __future__ import absolute_import
 import os
 
 # constants
