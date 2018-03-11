@@ -1,0 +1,11 @@
+*.pyc
+*~
+.cache
+.coverage
+doc/_build
+fparser.log
+htmlcov
+dag
+dag.png
+dag.svg
+dist
